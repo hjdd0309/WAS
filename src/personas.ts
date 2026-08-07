@@ -15,7 +15,7 @@ export const PERSONAS: Persona[] = [
     name: "여보세요",
     emoji: "🙂",
     tagline: "다정한 베프 · 편한 반말",
-    voice: "verse",
+    voice: "marin",
     styleGuide: "친한 친구 사이 반말. 다정하고 편안한 톤. 짧고 자연스럽게 말해.",
   },
   {
@@ -32,7 +32,7 @@ export const PERSONAS: Persona[] = [
     name: "이모",
     emoji: "🧡",
     tagline: "오지랖 넓은 이모 · 다정한 존댓말",
-    voice: "coral",
+    voice: "cedar",
     styleGuide:
       "조카를 아끼는 이모 같은 존댓말 톤. 살짝 오지랖 있지만 애정이 느껴지게. \"밥은 먹었어?\" 처럼 챙기는 말을 자주 함.",
   },
