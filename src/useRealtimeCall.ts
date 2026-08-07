@@ -14,7 +14,11 @@ interface RealtimeEvent {
   type: string;
   delta?: string;
   transcript?: string;
+  error?: unknown;
 }
+
+const TONE_REMINDER =
+  "[내부 지시 — 사용자에게 보이지 않음] 지금까지의 텐션과 편한 반말 톤을 그대로 유지해. 문장을 정중하거나 완벽하게 다듬지 말고, 추임새(음, 어, 그니까)를 섞어서 편하게 대답해. 방금 전에 썼던 표현이나 문장 구조를 반복하지 말고 새롭게 말해.";
 
 export function useRealtimeCall(onboarding: OnboardingData) {
   const [status, setStatus] = useState<RealtimeStatus>("idle");
@@ -27,15 +31,30 @@ export function useRealtimeCall(onboarding: OnboardingData) {
   const dcRef = useRef<RTCDataChannel | null>(null);
   const currentAiIndexRef = useRef<number | null>(null);
   const startedRef = useRef(false);
+  const responseInFlightRef = useRef(false);
 
   const handleEvent = useCallback((event: RealtimeEvent) => {
     switch (event.type) {
-      case "response.audio_transcript.delta": {
+      case "response.created": {
+        responseInFlightRef.current = true;
+        break;
+      }
+      case "response.done": {
+        // Keep the "response in flight" guard up briefly after the AI
+        // finishes, so mic pickup of the tail end of its own voice
+        // (imperfect echo cancellation) doesn't get treated as the user
+        // speaking and immediately trigger another response.
+        setTimeout(() => {
+          responseInFlightRef.current = false;
+        }, 600);
+        break;
+      }
+      case "response.output_audio_transcript.delta": {
         setAiSpeaking(true);
         setTranscript((prev) => {
           const next = [...prev];
           const idx = currentAiIndexRef.current;
-          if (idx === null || next[idx]?.done) {
+          if (idx === null || !next[idx] || next[idx].done) {
             next.push({ speaker: "ai", text: event.delta ?? "", done: false });
             currentAiIndexRef.current = next.length - 1;
           } else {
@@ -45,7 +64,7 @@ export function useRealtimeCall(onboarding: OnboardingData) {
         });
         break;
       }
-      case "response.audio_transcript.done": {
+      case "response.output_audio_transcript.done": {
         setAiSpeaking(false);
         setTranscript((prev) => {
           const next = [...prev];
@@ -67,6 +86,35 @@ export function useRealtimeCall(onboarding: OnboardingData) {
       }
       case "input_audio_buffer.speech_started": {
         setAiSpeaking(false);
+        break;
+      }
+      case "input_audio_buffer.speech_stopped": {
+        // Skip if the AI is already mid-response — this is almost always the
+        // mic picking up the AI's own voice (echo) rather than real user
+        // speech, and firing another response here causes a runaway loop.
+        if (responseInFlightRef.current) break;
+
+        // Re-inject the tone rules right before every reply instead of relying
+        // on the session's original instructions, which the model tends to
+        // follow less closely as the conversation goes on.
+        const dc = dcRef.current;
+        if (dc && dc.readyState === "open") {
+          dc.send(
+            JSON.stringify({
+              type: "conversation.item.create",
+              item: {
+                type: "message",
+                role: "system",
+                content: [{ type: "input_text", text: TONE_REMINDER }],
+              },
+            }),
+          );
+          dc.send(JSON.stringify({ type: "response.create" }));
+        }
+        break;
+      }
+      case "error": {
+        console.error("realtime session error event", event.error);
         break;
       }
       default:
@@ -120,11 +168,16 @@ export function useRealtimeCall(onboarding: OnboardingData) {
 
       setStatus("connecting");
 
-      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
       micStreamRef.current = micStream;
 
       const pc = new RTCPeerConnection();
       pcRef.current = pc;
+      pc.onconnectionstatechange = () => console.debug("pc connectionState", pc.connectionState);
+      pc.oniceconnectionstatechange = () =>
+        console.debug("pc iceConnectionState", pc.iceConnectionState);
       micStream.getTracks().forEach((track) => pc.addTrack(track, micStream));
 
       const audioEl = new Audio();
@@ -148,6 +201,8 @@ export function useRealtimeCall(onboarding: OnboardingData) {
         // Kick off the call with the AI speaking first, instead of waiting for the user.
         dc.send(JSON.stringify({ type: "response.create" }));
       };
+      dc.onclose = () => console.debug("data channel closed");
+      dc.onerror = (e) => console.error("data channel error", e);
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);

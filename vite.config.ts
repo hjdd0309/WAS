@@ -128,7 +128,15 @@ function openAiRealtimeSessionProxy(): Plugin {
                     turn_detection: {
                       type: 'server_vad',
                       silence_duration_ms: 700,
-                      interrupt_response: true,
+                      // Off: without headphones, mic pickup of the AI's own
+                      // voice (imperfect echo cancellation) was tripping VAD
+                      // and self-interrupting the AI mid-sentence, which fed
+                      // into a runaway response loop.
+                      interrupt_response: false,
+                      // The client re-injects a tone reminder and triggers the
+                      // response itself (see useRealtimeCall.ts), so auto-response
+                      // must stay off to avoid firing twice.
+                      create_response: false,
                     },
                   },
                 },
