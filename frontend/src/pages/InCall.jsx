@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import CallControlButton from '../components/CallControlButton'
 import StatusBar from '../components/StatusBar'
-import useCallTimer, { formatDuration } from '../hooks/useCallTimer'
+import { formatDuration } from '../hooks/useCallTimer'
 
-export default function InCall({ onEnd, onConnected }) {
+export default function InCall({ persona, onEnd, onConnected }) {
   const [connected, setConnected] = useState(false)
-  const seconds = useCallTimer(connected)
+  const [seconds, setSeconds] = useState(0)
   const [muted, setMuted] = useState(false)
   const [speaker, setSpeaker] = useState(false)
   const [micDenied, setMicDenied] = useState(false)
   const streamRef = useRef(null)
+  const startRef = useRef(null)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -19,6 +20,15 @@ export default function InCall({ onEnd, onConnected }) {
     return () => clearTimeout(timer)
     // runs once when the call screen mounts
   }, [])
+
+  useEffect(() => {
+    if (!connected) return
+    startRef.current = Date.now()
+    const id = setInterval(() => {
+      setSeconds(Math.floor((Date.now() - startRef.current) / 1000))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [connected])
 
   useEffect(() => {
     let cancelled = false
@@ -56,13 +66,16 @@ export default function InCall({ onEnd, onConnected }) {
     <div className="flex h-full w-full flex-col justify-between bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] px-8 pb-10 pt-3">
       <StatusBar />
 
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-3">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-4xl">
+          {persona.emoji}
+        </div>
+        <p className="text-[26px] font-bold text-white">{persona.name}</p>
         <p className="text-[15px] text-white/60">
           {connected ? formatDuration(seconds) : '연결 중...'}
         </p>
-        <p className="text-[32px] font-bold text-white">WAS AI</p>
         {micDenied && (
-          <p className="mt-1 text-[13px] text-[#ff453a]">
+          <p className="mt-1 px-6 text-center text-[13px] text-[#ff453a]">
             마이크 권한이 없어 음소거를 실제로 적용할 수 없어요
           </p>
         )}

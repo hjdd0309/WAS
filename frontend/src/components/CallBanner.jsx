@@ -1,25 +1,27 @@
 import { useEffect } from 'react'
 
-export default function CallBanner({ onTapBanner, onAccept, onDecline, onAutoDismiss }) {
+export default function CallBanner({ persona, onTapBanner, onAccept, onDecline, onAutoDismiss }) {
   useEffect(() => {
     const timer = setTimeout(onAutoDismiss, 5000)
     return () => clearTimeout(timer)
   }, [onAutoDismiss])
 
   return (
-    <div className="animate-banner-in absolute inset-x-3 top-3 z-30 sm:top-11">
+    <div
+      className="animate-banner-in absolute inset-x-3 top-3 z-30 sm:top-11"
+      role="alert"
+      aria-live="assertive"
+    >
       <div
         onClick={onTapBanner}
         className="flex items-center gap-3 rounded-[16px] bg-[#3a3a3c]/70 p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.35)] backdrop-blur-xl active:opacity-90"
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-            <path d="M12 2c.7 3.6 2.4 5.3 6 6-3.6.7-5.3 2.4-6 6-.7-3.6-2.4-5.3-6-6 3.6-.7 5.3-2.4 6-6Z" />
-          </svg>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-lg">
+          {persona.emoji}
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-semibold text-white">WAS AI</p>
+          <p className="truncate text-[15px] font-semibold text-white">{persona.name}</p>
           <p className="truncate text-[12px] text-white/60">휴대전화</p>
         </div>
 

@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import Button from '../components/Button'
 import StatusBar from '../components/StatusBar'
+import TagInput from '../components/TagInput'
 import { formatDuration } from '../hooks/useCallTimer'
+import { PERSONAS } from '../personas'
 
 const dummyApps = [
   {
@@ -17,19 +19,9 @@ const dummyApps = [
   { id: 'threads', name: '스레드', emoji: '@', bg: '#1c1c1e' },
 ]
 
-const voices = [
-  { id: 'mom', label: '엄마', emoji: '👩' },
-  { id: 'church_oppa', label: '교회 오빠', emoji: '🙏' },
-  { id: 'college_bestie', label: '대학생 여사친', emoji: '👩‍🎓' },
-  { id: 'gym_trainer', label: '헬스 트레이너', emoji: '💪' },
-  { id: 'granny', label: '잔소리 할머니', emoji: '👵' },
-  { id: 'tsundere_bro', label: '츤데레 남사친', emoji: '😤' },
-]
-
 export default function AppPicker({
   apps = [],
   editingApp,
-  initialVoiceId = 'mom',
   monitorSeconds = 0,
   onConfirm,
   onDelete,
@@ -37,7 +29,9 @@ export default function AppPicker({
 }) {
   const [selected, setSelected] = useState(editingApp ?? null)
   const [limitMinutes, setLimitMinutes] = useState(editingApp?.limitMinutes ?? 20)
-  const [voiceId, setVoiceId] = useState(initialVoiceId)
+  const [personaId, setPersonaId] = useState(editingApp?.personaId ?? 'bestie')
+  const [interests, setInterests] = useState(editingApp?.interests ?? [])
+  const [plan, setPlan] = useState(editingApp?.plan ?? '')
 
   const adjustLimit = (delta) =>
     setLimitMinutes((m) => Math.min(60, Math.max(5, m + delta)))
@@ -162,23 +156,60 @@ export default function AppPicker({
             </div>
 
             <div>
-              <p className="mb-2 text-[13px] font-medium text-gray-400">AI 목소리</p>
+              <div className="mb-2 flex items-baseline justify-between">
+                <p className="text-[13px] font-medium text-gray-400">AI 통화 설정</p>
+                <p className="text-[11px] text-gray-300">이 앱에서만 적용돼요</p>
+              </div>
               <div className="grid grid-cols-2 gap-2">
-                {voices.map((v) => (
+                {PERSONAS.map((p) => (
                   <button
-                    key={v.id}
-                    onClick={() => setVoiceId(v.id)}
-                    className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-colors active:opacity-70 ${
-                      voiceId === v.id
+                    key={p.id}
+                    onClick={() => setPersonaId(p.id)}
+                    className={`flex flex-col items-center gap-0.5 rounded-xl py-2.5 text-sm font-semibold transition-colors active:opacity-70 ${
+                      personaId === p.id
                         ? 'bg-accent text-white'
                         : 'bg-white text-gray-500'
                     }`}
                   >
-                    <span>{v.emoji}</span>
-                    {v.label}
+                    <span>
+                      {p.emoji} {p.name}
+                    </span>
+                    <span
+                      className={`text-[11px] font-normal ${
+                        personaId === p.id ? 'text-white/70' : 'text-gray-400'
+                      }`}
+                    >
+                      {p.tagline}
+                    </span>
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-[13px] font-medium text-gray-400">
+                관심사 <span className="text-gray-300">(선택)</span>
+              </p>
+              <TagInput
+                value={interests}
+                onChange={setInterests}
+                placeholder="예: 축구, 카페, K-pop"
+              />
+            </div>
+
+            <div>
+              <p className="mb-2 text-[13px] font-medium text-gray-400">
+                요즘 하려는 일 <span className="text-gray-300">(선택)</span>
+              </p>
+              <input
+                value={plan}
+                onChange={(e) => setPlan(e.target.value.slice(0, 200))}
+                placeholder="예: 자격증 공부, 운동 루틴 만들기"
+                className="w-full rounded-xl bg-white p-3 text-[16px] text-gray-900 outline-none placeholder:text-gray-300"
+              />
+              <p className="mt-1 text-[11px] leading-relaxed text-gray-300">
+                전화 마무리에 "저번에 말한 거 어떻게 됐어?"처럼 자연스럽게 되짚어줘요
+              </p>
             </div>
           </div>
         )}
@@ -195,7 +226,7 @@ export default function AppPicker({
 
       <Button
         disabled={!selected}
-        onClick={() => onConfirm({ app: selected, limitMinutes, voiceId })}
+        onClick={() => onConfirm({ app: selected, limitMinutes, personaId, interests, plan })}
       >
         {editingApp ? '저장' : '추가'}
       </Button>

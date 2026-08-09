@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import PhoneFrame from './components/PhoneFrame'
 import CallBanner from './components/CallBanner'
 import MainSettings from './pages/MainSettings'
@@ -6,6 +6,10 @@ import AppPicker from './pages/AppPicker'
 import IncomingCall from './pages/IncomingCall'
 import InCall from './pages/InCall'
 import Summary from './pages/Summary'
+import { getPersona } from './personas'
+import { loadState, saveState } from './lib/storage'
+
+const initial = loadState()
 
 export default function App() {
   // screen: 지금 보고 있는 화면 (settings | apppicker)
@@ -13,11 +17,30 @@ export default function App() {
   // callPhase: 화면 위에 얹히는 전화 상태 (idle | banner | fullscreen | calling | summary)
   const [callPhase, setCallPhase] = useState('idle')
 
-  const [apps, setApps] = useState([])
-  const [voiceId, setVoiceId] = useState('mom')
+  // AI 통화 설정(페르소나/관심사/계획)은 앱마다 따로 저장된다 — 앱 편집 화면
+  // 안에서 설정하는 값이라 사용자 입장에선 당연히 그 앱만의 설정으로 보인다.
+  const [apps, setApps] = useState(initial.apps)
+
   const [editingApp, setEditingApp] = useState(null)
+  const [triggeredApp, setTriggeredApp] = useState(null)
   const [callDuration, setCallDuration] = useState(0)
   const [callConnected, setCallConnected] = useState(false)
+
+  // 설정은 새로고침/재방문에도 유지되도록 로컬에 저장
+  useEffect(() => {
+    saveState({ apps })
+  }, [apps])
+
+  // 여러 앱을 등록해도 실제로 감시할 수 있는 건 "가장 먼저 한도에 도달할 앱"
+  // 하나뿐 — 모니터링 시계가 앱 전체에 공통이므로, 제한 시간이 가장 짧은
+  // 앱이 항상 먼저 울린다.
+  const soonestApp = useMemo(() => {
+    if (apps.length === 0) return null
+    return apps.reduce((min, a) => (a.limitMinutes < min.limitMinutes ? a : min), apps[0])
+  }, [apps])
+
+  // 실제로 전화를 걸어온 앱의 페르소나로 통화 화면을 표시한다.
+  const callPersona = useMemo(() => getPersona(triggeredApp?.personaId), [triggeredApp])
 
   // 모니터링 타이머는 App 최상위에서 계속 돌아, 어떤 화면에 있든 시간이 유지된다.
   const [monitorSeconds, setMonitorSeconds] = useState(0)
@@ -39,13 +62,14 @@ export default function App() {
 
   useEffect(() => {
     if (monitorSeconds === 0) firedRef.current = false
-    if (!apps[0] || firedRef.current) return
-    const limitSeconds = apps[0].limitMinutes * 60
+    if (!soonestApp || firedRef.current) return
+    const limitSeconds = soonestApp.limitMinutes * 60
     if (monitorSeconds >= limitSeconds) {
       firedRef.current = true
+      setTriggeredApp(soonestApp)
       setCallPhase('banner')
     }
-  }, [monitorSeconds, apps])
+  }, [monitorSeconds, soonestApp])
 
   const startCall = () => {
     setCallConnected(false)
@@ -60,7 +84,11 @@ export default function App() {
   if (callPhase === 'calling') {
     return (
       <PhoneFrame activity={callConnected ? 'active' : 'ringing'}>
-        <InCall onEnd={handleEnd} onConnected={() => setCallConnected(true)} />
+        <InCall
+          persona={callPersona}
+          onEnd={handleEnd}
+          onConnected={() => setCallConnected(true)}
+        />
       </PhoneFrame>
     )
   }
@@ -69,10 +97,11 @@ export default function App() {
     return (
       <PhoneFrame>
         <Summary
-          app={apps[0]}
+          app={triggeredApp}
           duration={callDuration}
           onHome={() => {
             setMonitorSeconds(0)
+            setTriggeredApp(null)
             setCallPhase('idle')
             setScreen('settings')
           }}
@@ -100,7 +129,10 @@ export default function App() {
               setEditingApp(app)
               setScreen('apppicker')
             }}
-            onTestCall={() => setCallPhase('banner')}
+            onTestCall={() => {
+              setTriggeredApp(soonestApp)
+              setCallPhase('banner')
+            }}
           />
         )}
 
@@ -108,12 +140,10 @@ export default function App() {
           <AppPicker
             apps={apps}
             editingApp={editingApp}
-            initialVoiceId={voiceId}
             monitorSeconds={monitorSeconds}
-            onConfirm={({ app: selected, limitMinutes, voiceId: voice }) => {
-              setVoiceId(voice)
+            onConfirm={({ app: selected, limitMinutes, personaId, interests, plan }) => {
               setApps((prev) => {
-                const record = { ...selected, limitMinutes }
+                const record = { ...selected, limitMinutes, personaId, interests, plan }
                 if (editingApp) {
                   return prev.map((a) => (a.id === editingApp.id ? record : a))
                 }
@@ -136,6 +166,7 @@ export default function App() {
 
         {callPhase === 'banner' && (
           <CallBanner
+            persona={callPersona}
             onTapBanner={() => setCallPhase('fullscreen')}
             onAccept={startCall}
             onDecline={() => setCallPhase('idle')}
@@ -145,7 +176,7 @@ export default function App() {
 
         {callPhase === 'fullscreen' && (
           <div className="animate-fade-in absolute inset-0 z-40">
-            <IncomingCall onAccept={startCall} onDecline={() => setCallPhase('idle')} />
+            <IncomingCall persona={callPersona} onAccept={startCall} onDecline={() => setCallPhase('idle')} />
           </div>
         )}
       </div>
