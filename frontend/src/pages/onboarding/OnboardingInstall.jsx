@@ -71,7 +71,7 @@ export default function OnboardingInstall({ onBack, onNext }) {
             ) : android ? (
               <>
                 <p className="mt-2 text-[13px] leading-[1.6] text-[#919191]">
-                  버튼을 눌러 위스피를 앱처럼 설치할 수 있어요.
+                  버튼을 눌러 잠깐만을 앱처럼 설치할 수 있어요.
                 </p>
                 <button
                   onClick={handleInstallClick}
@@ -100,7 +100,7 @@ export default function OnboardingInstall({ onBack, onNext }) {
               <p className="mt-2 text-[13px] leading-[1.6] text-[#919191]">알림이 허용됐어요.</p>
             ) : notifPermission === 'denied' ? (
               <p className="mt-2 text-[13px] leading-[1.6] text-[#919191]">
-                알림이 차단돼 있어요. 브라우저/시스템 설정에서 위스피 알림을 직접 허용해주세요.
+                알림이 차단돼 있어요. 브라우저/시스템 설정에서 잠깐만 알림을 직접 허용해주세요.
               </p>
             ) : notifPermission === 'unsupported' ? (
               <p className="mt-2 text-[13px] leading-[1.6] text-[#919191]">

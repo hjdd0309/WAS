@@ -1,7 +1,7 @@
 {
-  "name": "위스피 - Wait A Second",
-  "short_name": "위스피",
-  "description": "정신없이 화면에 빠졌을 때, 위스피가 전화로 잠깐 불러내드려요.",
+  "name": "잠깐만 - Wait A Second",
+  "short_name": "잠깐만",
+  "description": "정신없이 화면에 빠졌을 때, 위스피가 전화로 불러내드려요.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

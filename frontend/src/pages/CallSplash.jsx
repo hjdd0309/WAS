@@ -27,7 +27,7 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
   const callPayload = {
     interests: profile.interests,
     plan: profile.plan,
-    personaId: profile.personaId,
+    personaId: persona.id,
     previousSummary: profile.previousSummary,
   }
 

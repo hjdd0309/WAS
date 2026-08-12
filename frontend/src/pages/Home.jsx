@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import BottomNav from '../components/BottomNav'
-import BellIcon from '../components/BellIcon'
 import homeGreetingMascot from '../assets/illustrations/home-greeting-mascot.png'
+import { getApp } from '../apps'
+import { getPersona } from '../personas'
 
 function formatAway(seconds) {
   const m = Math.round(seconds / 60)
@@ -10,22 +11,16 @@ function formatAway(seconds) {
   return `${Math.floor(m / 60)}시간 ${m % 60}분`
 }
 
-// 실제 루틴 기능이 붙기 전까지의 데모용 고정 목록.
-const ROUTINES = [
-  { label: '공모전 준비', color: '#ff9090' },
-  { label: '책읽기', color: '#511010' },
-  { label: '헬스장 가기', color: '#282c47' },
-  { label: '요리 연습', color: '#cbe291' },
-  { label: '수영', color: '#586deb' },
-]
-
-function formatLimitLabel(minutes) {
-  if (minutes % 60 === 0) return `${minutes / 60}시간`
-  if (minutes < 60) return `${minutes}분`
-  return `${Math.floor(minutes / 60)}시간 ${minutes % 60}분`
-}
-
-export default function Home({ app, persona, limitMinutes, awaySeconds = 0, onCallPress, onNavigate }) {
+export default function Home({
+  app,
+  monitoredApps,
+  routines,
+  awaySeconds = 0,
+  onCallPress,
+  onNavigate,
+  onManageApps,
+  onManageRoutines,
+}) {
   const [showAwayNotice, setShowAwayNotice] = useState(false)
 
   useEffect(() => {
@@ -99,42 +94,80 @@ export default function Home({ app, persona, limitMinutes, awaySeconds = 0, onCa
         </div>
 
         <div className="mt-4 rounded-[20px] border border-[#695b69]/60 bg-[#1d191d] p-5">
-          <div className="flex items-center gap-2.5">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-accent">
-              <BellIcon size={16} />
-            </span>
-            <p className="text-[12px] font-medium text-white">{persona.name}이 먼저 전화할게요</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[14px] font-semibold text-white">모니터링 중인 앱</p>
+            <button
+              onClick={onManageApps}
+              className="text-[11px] font-medium text-accent-soft active:opacity-70"
+            >
+              관리
+            </button>
           </div>
 
-          <h2 className="mt-4 text-[19px] font-semibold leading-[1.4] text-white">
-            {formatLimitLabel(limitMinutes)}이 넘는다면,
-            <br />
-            제가 당신을 <span className="text-accent-soft">불러줄게요</span>
-          </h2>
-          <p className="mt-2 max-w-[210px] text-[12px] leading-[1.6] text-[#b9b9b9]">
-            당신이 너무 오래 머물고 있을 때
-            <br />
-            제가 슬쩍 찾아가 말을 건넬게요
-          </p>
+          {monitoredApps.length === 0 ? (
+            <button
+              onClick={onManageApps}
+              className="mt-3 flex h-[60px] w-full items-center justify-center rounded-[14px] border border-dashed border-white/20 text-[12px] font-medium text-white/40 active:opacity-70"
+            >
+              + 앱 추가하기
+            </button>
+          ) : (
+            <div className="mt-3 flex flex-col gap-2">
+              {monitoredApps.map((m) => {
+                const mApp = getApp(m.appId)
+                const mPersona = getPersona(m.personaId)
+                return (
+                  <div
+                    key={m.id}
+                    className="flex items-center gap-3 rounded-[14px] bg-white/5 px-3 py-2.5"
+                  >
+                    <div className="size-9 shrink-0 overflow-hidden rounded-[8px]">
+                      <img src={mApp.icon} alt="" className="h-full w-full object-cover" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-white">{mApp.name}</p>
+                      <p className="truncate text-[11px] text-[#919191]">
+                        {mPersona.emoji} {mPersona.name} · {m.limitMinutes}분
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           <div className="my-4 h-px bg-white/10" />
 
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold text-white">내 루틴 리스트</p>
-            <button className="text-[11px] font-medium text-accent-soft active:opacity-70">관리</button>
+            <button
+              onClick={onManageRoutines}
+              className="text-[11px] font-medium text-accent-soft active:opacity-70"
+            >
+              관리
+            </button>
           </div>
 
-          <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
-            {ROUTINES.map((routine) => (
-              <div
-                key={routine.label}
-                className="flex h-[60px] w-14 shrink-0 flex-col items-center justify-center gap-1.5 rounded-[10px] bg-[#574a57]"
-              >
-                <span className="size-[22px] rounded-full" style={{ background: routine.color }} />
-                <span className="px-1 text-center text-[8px] font-medium text-white">{routine.label}</span>
-              </div>
-            ))}
-          </div>
+          {routines.length === 0 ? (
+            <button
+              onClick={onManageRoutines}
+              className="mt-3 flex h-[60px] w-full items-center justify-center rounded-[10px] border border-dashed border-white/20 text-[12px] font-medium text-white/40 active:opacity-70"
+            >
+              + 루틴 추가하기
+            </button>
+          ) : (
+            <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
+              {routines.map((routine) => (
+                <div
+                  key={routine.id}
+                  className="flex h-[60px] w-14 shrink-0 flex-col items-center justify-center gap-1.5 rounded-[10px] bg-[#574a57]"
+                >
+                  <span className="size-[22px] rounded-full" style={{ background: routine.color }} />
+                  <span className="px-1 text-center text-[8px] font-medium text-white">{routine.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

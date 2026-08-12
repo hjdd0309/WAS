@@ -5,14 +5,17 @@ import Home from './pages/Home'
 import Log from './pages/Log'
 import Report from './pages/Report'
 import Settings from './pages/Settings'
+import RoutineManage from './pages/RoutineManage'
+import AppManage from './pages/AppManage'
 import CallSplash from './pages/CallSplash'
 import { getApp } from './apps'
-import { getPersona } from './personas'
+import { getPersona, DEFAULT_PERSONA_ID } from './personas'
 import { loadState, saveState } from './lib/storage'
 import useAwayMonitor from './hooks/useAwayMonitor'
 
 const initial = loadState()
 const TABS = ['home', 'log', 'report', 'settings']
+const ROUTINE_PALETTE = ['#ff9090', '#511010', '#282c47', '#cbe291', '#586deb', '#b190ea', '#f6c453', '#4fd1c5']
 
 function hasCallDeepLink() {
   if (typeof window === 'undefined') return false
@@ -41,15 +44,62 @@ export default function App() {
     }
   }, [])
 
-  const app = useMemo(() => getApp(profile.appId), [profile.appId])
-  const persona = useMemo(() => getPersona(profile.personaId), [profile.personaId])
+  // 앱을 여러 개 등록해도 실제로 감시할 수 있는 건 "가장 먼저 한도에 도달할 앱"
+  // 하나뿐 — 모니터링 타이머가 앱 전체에 공통이므로, 제한 시간이 가장 짧은 앱이
+  // 항상 먼저 울리고, 그 앱의 페르소나로 전화가 온다.
+  const soonestApp = useMemo(() => {
+    if (profile.apps.length === 0) return null
+    return profile.apps.reduce((min, a) => (a.limitMinutes < min.limitMinutes ? a : min), profile.apps[0])
+  }, [profile.apps])
+
+  const app = useMemo(() => getApp(soonestApp?.appId), [soonestApp])
+  const persona = useMemo(() => getPersona(soonestApp?.personaId), [soonestApp])
 
   const handleOnboardingComplete = (data) => {
-    setProfile({ ...data, onboarded: true })
+    setProfile({
+      goals: data.goals,
+      apps: [{ id: crypto.randomUUID(), appId: data.appId, limitMinutes: data.limitMinutes, personaId: data.personaId }],
+      interests: data.interests,
+      plan: data.plan,
+      previousSummary: '',
+      routines: profile.routines,
+      onboarded: true,
+    })
     setScreen('home')
   }
 
   const updateProfile = (partial) => setProfile((prev) => ({ ...prev, ...partial }))
+
+  const addRoutine = (label) =>
+    setProfile((prev) => ({
+      ...prev,
+      routines: [
+        ...prev.routines,
+        {
+          id: crypto.randomUUID(),
+          label,
+          color: ROUTINE_PALETTE[prev.routines.length % ROUTINE_PALETTE.length],
+        },
+      ],
+    }))
+
+  const removeRoutine = (id) =>
+    setProfile((prev) => ({ ...prev, routines: prev.routines.filter((r) => r.id !== id) }))
+
+  const addApp = (appId) =>
+    setProfile((prev) => ({
+      ...prev,
+      apps: [...prev.apps, { id: crypto.randomUUID(), appId, limitMinutes: 45, personaId: DEFAULT_PERSONA_ID }],
+    }))
+
+  const updateApp = (id, partial) =>
+    setProfile((prev) => ({
+      ...prev,
+      apps: prev.apps.map((a) => (a.id === id ? { ...a, ...partial } : a)),
+    }))
+
+  const removeApp = (id) =>
+    setProfile((prev) => ({ ...prev, apps: prev.apps.filter((a) => a.id !== id) }))
 
   // 이미 열려 있던 탭이 알림 클릭으로 포커스된 경우(새 탭이 아니라서 URL을
   // 다시 읽지 않음) — 서비스워커가 postMessage로 알려준다.
@@ -65,8 +115,8 @@ export default function App() {
   // "다른 앱 사용 시간"은 브라우저가 알 수 없어서, 이 앱을 벗어나 있던
   // 시간을 근사치로 쓴다 — 통화 중/온보딩 중에는 재트리거되지 않게 막는다.
   const { awaySeconds } = useAwayMonitor({
-    enabled: profile.onboarded && screen !== 'onboarding' && screen !== 'callSplash',
-    limitMinutes: profile.limitMinutes,
+    enabled: profile.onboarded && soonestApp !== null && screen !== 'onboarding' && screen !== 'callSplash',
+    limitMinutes: soonestApp?.limitMinutes ?? 45,
     personaName: persona.name,
     onThresholdReached: () => setScreen('callSplash'),
   })
@@ -98,10 +148,31 @@ export default function App() {
       {screen === 'home' && (
         <Home
           app={app}
-          persona={persona}
-          limitMinutes={profile.limitMinutes}
+          monitoredApps={profile.apps}
+          routines={profile.routines}
           awaySeconds={awaySeconds}
+          onManageApps={() => setScreen('appManage')}
+          onManageRoutines={() => setScreen('routines')}
           {...tabProps}
+        />
+      )}
+
+      {screen === 'appManage' && (
+        <AppManage
+          monitoredApps={profile.apps}
+          onAddApp={addApp}
+          onUpdateApp={updateApp}
+          onRemoveApp={removeApp}
+          onBack={() => setScreen('home')}
+        />
+      )}
+
+      {screen === 'routines' && (
+        <RoutineManage
+          routines={profile.routines}
+          onAdd={addRoutine}
+          onRemove={removeRoutine}
+          onBack={() => setScreen('home')}
         />
       )}
 
@@ -111,10 +182,8 @@ export default function App() {
 
       {screen === 'settings' && (
         <Settings
-          app={app}
-          persona={persona}
-          limitMinutes={profile.limitMinutes}
-          onUpdateProfile={updateProfile}
+          monitoredApps={profile.apps}
+          onManageApps={() => setScreen('appManage')}
           {...tabProps}
         />
       )}
