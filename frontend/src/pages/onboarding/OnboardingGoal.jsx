@@ -51,7 +51,7 @@ export default function OnboardingGoal({ selectedGoals, onToggleGoal, onBack, on
       <div className="flex-1" />
 
       <div className="flex flex-col gap-6">
-        <ProgressDots total={6} activeIndex={3} />
+        <ProgressDots total={7} activeIndex={3} />
         <OnboardingActions onBack={onBack} onNext={onNext} />
       </div>
     </div>

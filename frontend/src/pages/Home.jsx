@@ -1,4 +1,3 @@
-import StatusBar from '../components/StatusBar'
 import BottomNav from '../components/BottomNav'
 import BellIcon from '../components/BellIcon'
 import homeGreetingMascot from '../assets/illustrations/home-greeting-mascot.png'
@@ -21,11 +20,7 @@ function formatLimitLabel(minutes) {
 export default function Home({ app, persona, limitMinutes, onCallPress, onNavigate }) {
   return (
     <div className="flex h-full w-full flex-col bg-black">
-      <div className="shrink-0 px-4 pt-3">
-        <StatusBar />
-      </div>
-
-      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-2">
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <div className="flex items-center justify-between">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
             <path d="M4 6h16M4 12h16M4 18h16" />

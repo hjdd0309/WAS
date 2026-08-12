@@ -32,7 +32,7 @@ export default function OnboardingSetup({
       </div>
 
       <div className="flex flex-col gap-6 pt-4">
-        <ProgressDots total={6} activeIndex={4} />
+        <ProgressDots total={7} activeIndex={4} />
         <OnboardingActions onBack={onBack} onNext={onNext} nextDisabled={!selectedAppId} />
       </div>
     </div>

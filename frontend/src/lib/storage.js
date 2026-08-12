@@ -9,6 +9,8 @@ const defaultState = {
   appId: 'youtube',
   limitMinutes: 45,
   personaId: null,
+  interests: [],
+  plan: '',
 }
 
 export function loadState() {

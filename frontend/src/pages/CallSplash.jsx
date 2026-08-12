@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import StatusBar from '../components/StatusBar'
 import mainLogo from '../assets/illustrations/main-logo.png'
 
 export default function CallSplash({ onDismiss }) {
@@ -14,14 +13,12 @@ export default function CallSplash({ onDismiss }) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onDismiss()}
-      className="flex h-full w-full flex-col items-center px-4 pt-3"
+      className="flex h-full w-full flex-col items-center"
       style={{
         backgroundImage:
           'linear-gradient(160deg, #b190ea 0%, #645184 45%, #000 100%)',
       }}
     >
-      <StatusBar />
-
       <div className="flex flex-1 flex-col items-center justify-center gap-4">
         <img
           src={mainLogo}

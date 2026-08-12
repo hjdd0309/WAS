@@ -25,7 +25,7 @@ export default function OnboardingIntro({ onNext }) {
       </div>
 
       <div className="flex flex-col gap-6">
-        <ProgressDots total={6} activeIndex={0} />
+        <ProgressDots total={7} activeIndex={0} />
         <OnboardingActions onNext={onNext} ctaLabel="시작하기" />
       </div>
     </div>

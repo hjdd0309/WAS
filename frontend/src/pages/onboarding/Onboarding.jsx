@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import StatusBar from '../../components/StatusBar'
 import { DEFAULT_PERSONA_ID } from '../../personas'
 import OnboardingIntro from './OnboardingIntro'
 import OnboardingInfo from './OnboardingInfo'
 import OnboardingGoal from './OnboardingGoal'
 import OnboardingSetup from './OnboardingSetup'
+import OnboardingPersonalize from './OnboardingPersonalize'
 import OnboardingReady from './OnboardingReady'
 
 // 이미지가 있는 온보딩 단계마다 원본 크롭 비율(w/h)은 유지한 채, 세로 폭을
@@ -19,13 +19,15 @@ export default function Onboarding({ onComplete }) {
   const [selectedAppId, setSelectedAppId] = useState('youtube')
   const [limitMinutes, setLimitMinutes] = useState(45)
   const [personaId, setPersonaId] = useState(DEFAULT_PERSONA_ID)
+  const [interests, setInterests] = useState([])
+  const [plan, setPlan] = useState('')
 
   const toggleGoal = (goal) =>
     setSelectedGoals((prev) =>
       prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal],
     )
 
-  const next = () => setStep((s) => Math.min(5, s + 1))
+  const next = () => setStep((s) => Math.min(6, s + 1))
   const back = () => setStep((s) => Math.max(0, s - 1))
 
   const finish = () =>
@@ -34,14 +36,13 @@ export default function Onboarding({ onComplete }) {
       appId: selectedAppId,
       limitMinutes,
       personaId,
+      interests,
+      plan,
     })
 
   return (
     <div className="flex h-full w-full flex-col bg-black">
-      <div className="shrink-0 px-4 pt-3">
-        <StatusBar />
-      </div>
-      <div className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 pt-6">
         {step === 0 && <OnboardingIntro onNext={next} />}
         {step === 1 && (
           <OnboardingInfo
@@ -107,7 +108,17 @@ export default function Onboarding({ onComplete }) {
             onNext={next}
           />
         )}
-        {step === 5 && <OnboardingReady onComplete={finish} />}
+        {step === 5 && (
+          <OnboardingPersonalize
+            interests={interests}
+            onChangeInterests={setInterests}
+            plan={plan}
+            onChangePlan={setPlan}
+            onBack={back}
+            onNext={next}
+          />
+        )}
+        {step === 6 && <OnboardingReady onComplete={finish} />}
       </div>
     </div>
   )

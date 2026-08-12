@@ -17,7 +17,7 @@ export default function OnboardingReady({ onComplete }) {
       </div>
 
       <div className="flex flex-col gap-6">
-        <ProgressDots total={6} activeIndex={5} />
+        <ProgressDots total={7} activeIndex={6} />
         <OnboardingActions onNext={onComplete} ctaLabel="위스피와 대화해볼까요?" />
       </div>
     </div>

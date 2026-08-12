@@ -1,4 +1,3 @@
-import StatusBar from '../components/StatusBar'
 import BottomNav from '../components/BottomNav'
 import ScreenHeader from '../components/ScreenHeader'
 import { getPersona } from '../personas'
@@ -25,11 +24,7 @@ const GROUPS = [
 export default function Log({ onNavigate, onCallPress }) {
   return (
     <div className="flex h-full w-full flex-col bg-black">
-      <div className="shrink-0 px-4 pt-3">
-        <StatusBar />
-      </div>
-
-      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <ScreenHeader title="기록" subtitle="위스피와 나눈 대화들이에요" />
 
         <div className="mt-5 flex gap-2.5">

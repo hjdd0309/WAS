@@ -1,4 +1,3 @@
-import StatusBar from '../components/StatusBar'
 import BottomNav from '../components/BottomNav'
 import ScreenHeader from '../components/ScreenHeader'
 import WeeklyBars from '../components/WeeklyBars'
@@ -24,11 +23,7 @@ const APP_USAGE = [
 export default function Report({ onNavigate, onCallPress }) {
   return (
     <div className="flex h-full w-full flex-col bg-black">
-      <div className="shrink-0 px-4 pt-3">
-        <StatusBar />
-      </div>
-
-      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <ScreenHeader title="리포트" subtitle="이번 주, 당신의 변화를 확인해보세요" />
 
         <div className="mt-5 grid grid-cols-3 gap-2">

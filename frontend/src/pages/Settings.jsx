@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import StatusBar from '../components/StatusBar'
 import BottomNav from '../components/BottomNav'
 import ScreenHeader from '../components/ScreenHeader'
 import MonitorSetupForm from '../components/MonitorSetupForm'
@@ -64,11 +63,7 @@ export default function Settings({ app, persona, limitMinutes, onUpdateProfile, 
 
   return (
     <div className="flex h-full w-full flex-col bg-black">
-      <div className="shrink-0 px-4 pt-3">
-        <StatusBar />
-      </div>
-
-      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <ScreenHeader title="설정" subtitle="위스피를 나에게 맞게 조정해요" />
 
         <div className="mt-5 rounded-[20px] border border-[#695b69]/60 bg-[#1d191d] p-5">
