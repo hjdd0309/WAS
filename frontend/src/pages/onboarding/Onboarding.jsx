@@ -5,6 +5,7 @@ import OnboardingInfo from './OnboardingInfo'
 import OnboardingGoal from './OnboardingGoal'
 import OnboardingSetup from './OnboardingSetup'
 import OnboardingPersonalize from './OnboardingPersonalize'
+import OnboardingInstall from './OnboardingInstall'
 import OnboardingReady from './OnboardingReady'
 
 // 이미지가 있는 온보딩 단계마다 원본 크롭 비율(w/h)은 유지한 채, 세로 폭을
@@ -27,7 +28,7 @@ export default function Onboarding({ onComplete }) {
       prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal],
     )
 
-  const next = () => setStep((s) => Math.min(6, s + 1))
+  const next = () => setStep((s) => Math.min(7, s + 1))
   const back = () => setStep((s) => Math.max(0, s - 1))
 
   const finish = () =>
@@ -118,7 +119,8 @@ export default function Onboarding({ onComplete }) {
             onNext={next}
           />
         )}
-        {step === 6 && <OnboardingReady onComplete={finish} />}
+        {step === 6 && <OnboardingInstall onBack={back} onNext={next} />}
+        {step === 7 && <OnboardingReady onComplete={finish} />}
       </div>
     </div>
   )

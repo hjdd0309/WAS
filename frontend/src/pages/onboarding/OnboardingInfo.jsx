@@ -51,7 +51,7 @@ export default function OnboardingInfo({
       </div>
 
       <div className="flex flex-col gap-6 pt-4">
-        <ProgressDots total={7} activeIndex={activeIndex} />
+        <ProgressDots total={8} activeIndex={activeIndex} />
         <OnboardingActions onBack={onBack} onNext={onNext} ctaLabel={ctaLabel} />
       </div>
     </div>

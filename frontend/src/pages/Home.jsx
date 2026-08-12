@@ -1,6 +1,14 @@
+import { useEffect, useState } from 'react'
 import BottomNav from '../components/BottomNav'
 import BellIcon from '../components/BellIcon'
 import homeGreetingMascot from '../assets/illustrations/home-greeting-mascot.png'
+
+function formatAway(seconds) {
+  const m = Math.round(seconds / 60)
+  if (m < 1) return '방금'
+  if (m < 60) return `${m}분`
+  return `${Math.floor(m / 60)}시간 ${m % 60}분`
+}
 
 // 실제 루틴 기능이 붙기 전까지의 데모용 고정 목록.
 const ROUTINES = [
@@ -17,7 +25,16 @@ function formatLimitLabel(minutes) {
   return `${Math.floor(minutes / 60)}시간 ${minutes % 60}분`
 }
 
-export default function Home({ app, persona, limitMinutes, onCallPress, onNavigate }) {
+export default function Home({ app, persona, limitMinutes, awaySeconds = 0, onCallPress, onNavigate }) {
+  const [showAwayNotice, setShowAwayNotice] = useState(false)
+
+  useEffect(() => {
+    if (!awaySeconds) return undefined
+    setShowAwayNotice(true)
+    const timer = setTimeout(() => setShowAwayNotice(false), 6000)
+    return () => clearTimeout(timer)
+  }, [awaySeconds])
+
   return (
     <div className="flex h-full w-full flex-col bg-black">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
@@ -30,6 +47,12 @@ export default function Home({ app, persona, limitMinutes, onCallPress, onNaviga
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
         </div>
+
+        {showAwayNotice && (
+          <div className="animate-fade-in mt-4 rounded-[14px] bg-white/5 px-3.5 py-2.5 text-[12px] text-white/50">
+            {formatAway(awaySeconds)} 동안 자리를 비우셨네요
+          </div>
+        )}
 
         <div className="mt-5 flex items-start justify-between gap-3">
           <div>

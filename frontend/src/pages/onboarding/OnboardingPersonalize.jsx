@@ -45,7 +45,7 @@ export default function OnboardingPersonalize({ interests, onChangeInterests, pl
       </div>
 
       <div className="flex flex-col gap-6 pt-4">
-        <ProgressDots total={7} activeIndex={5} />
+        <ProgressDots total={8} activeIndex={5} />
         <OnboardingActions onBack={onBack} onNext={onNext} />
       </div>
     </div>
