@@ -10,6 +10,12 @@ const APP_SECRET = import.meta.env.VITE_APP_SHARED_SECRET || ''
 const TONE_REMINDER =
   '[내부 지시 — 사용자에게 보이지 않음] 지금까지의 텐션과 편한 반말 톤을 그대로 유지해. 문장을 정중하거나 완벽하게 다듬지 말고, 추임새(음, 어, 그니까)를 섞어서 편하게 대답해. 방금 전에 썼던 표현이나 문장 구조를 반복하지 말고 새롭게 말해.'
 
+// <audio> 기본 volume은 1.0(최대)이라 안드로이드에서 AI 음성이 과도하게 크게
+// 들리는 원인 중 하나였다. 소프트웨어 단에서 한 단계 낮춰 재생한다 — 다만
+// 이건 볼륨 슬라이더가 아니라 고정 완화값이라, "미디어 볼륨"이 아닌 다른
+// 오디오 스트림으로 라우팅되는 문제 자체를 고치진 못한다(아래 pc.ontrack 주석 참고).
+const DEFAULT_PLAYBACK_VOLUME = 0.8
+
 const ERROR_MESSAGES = {
   network: '통화 서버에 연결할 수 없어요. 네트워크를 확인해주세요.',
   session: '통화를 시작할 수 없어요. 잠시 후 다시 시도해주세요.',
@@ -34,6 +40,7 @@ export default function useRealtimeCall() {
   const pcRef = useRef(null)
   const micStreamRef = useRef(null)
   const audioElRef = useRef(null)
+  const remoteStreamRef = useRef(null)
   const audioCtxRef = useRef(null)
   const gainNodeRef = useRef(null)
   const dcRef = useRef(null)
@@ -143,7 +150,40 @@ export default function useRealtimeCall() {
       audioCtxRef.current = null
     }
     gainNodeRef.current = null
+    remoteStreamRef.current = null
     setAiSpeaking(false)
+  }, [])
+
+  // WebAudio 그래프를 통한 볼륨 부스트를 켜고 끈다. 켤 때만 audioEl을
+  // 음소거하고 AudioContext/GainNode 경로로 우회 재생한다 — 끄면 다시
+  // audioEl 기본 재생으로 되돌아가 에코 캔슬레이션 레퍼런스를 정상적으로 탄다.
+  const applyGainBoost = useCallback((enabled) => {
+    const audioEl = audioElRef.current
+    const remoteStream = remoteStreamRef.current
+    if (!audioEl || !remoteStream) return
+
+    if (!enabled) {
+      if (gainNodeRef.current) gainNodeRef.current.gain.value = 1
+      audioEl.muted = false
+      return
+    }
+
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext
+      const ctx = audioCtxRef.current ?? new AudioCtx()
+      audioCtxRef.current = ctx
+      if (!gainNodeRef.current) {
+        const gainNode = ctx.createGain()
+        gainNode.connect(ctx.destination)
+        const source = ctx.createMediaStreamSource(remoteStream)
+        source.connect(gainNode)
+        gainNodeRef.current = gainNode
+      }
+      gainNodeRef.current.gain.value = 1.6
+      audioEl.muted = true
+    } catch {
+      audioEl.muted = false
+    }
   }, [])
 
   const hangup = useCallback(() => {
@@ -200,26 +240,22 @@ export default function useRealtimeCall() {
 
         const audioEl = new Audio()
         audioEl.autoplay = true
+        audioEl.volume = DEFAULT_PLAYBACK_VOLUME
         audioElRef.current = audioEl
 
         pc.ontrack = (e) => {
-          audioEl.srcObject = e.streams[0]
-          // 스피커 볼륨 부스트를 위해 WebAudio 그래프로 출력을 우회시킨다.
-          // 지원되지 않는 브라우저에서는 catch에서 audioEl 자체 재생으로 폴백.
-          try {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext
-            const ctx = audioCtxRef.current ?? new AudioCtx()
-            audioCtxRef.current = ctx
-            const gainNode = ctx.createGain()
-            gainNode.gain.value = speakerBoost ? 1.6 : 1
-            gainNode.connect(ctx.destination)
-            gainNodeRef.current = gainNode
-            const source = ctx.createMediaStreamSource(e.streams[0])
-            source.connect(gainNode)
-            audioEl.muted = true
-          } catch {
-            audioEl.muted = false
-          }
+          const remoteStream = e.streams[0]
+          remoteStreamRef.current = remoteStream
+          // 기본은 audioEl로 그대로 재생한다. WebAudio 그래프로 우회 재생하면
+          // 브라우저(특히 Android Chrome)의 내장 에코 캔슬레이션이 재생 중인
+          // 오디오를 레퍼런스로 잡지 못해, AI 목소리가 마이크로 다시 들어와
+          // 엉뚱한 발화로 인식되는 문제가 생긴다. 부스트가 실제로 켜졌을 때만
+          // WebAudio 경로를 사용한다(applyGainBoost 참고).
+          audioEl.srcObject = remoteStream
+          audioEl.muted = false
+          audioEl.volume = DEFAULT_PLAYBACK_VOLUME
+          audioEl.play().catch(() => {})
+          if (speakerBoost) applyGainBoost(true)
         }
 
         const dc = pc.createDataChannel('oai-events')
@@ -266,7 +302,7 @@ export default function useRealtimeCall() {
         setStatus('error')
       }
     },
-    [handleEvent, teardown, speakerBoost],
+    [handleEvent, teardown, speakerBoost, applyGainBoost],
   )
 
   const retry = useCallback(
@@ -287,10 +323,13 @@ export default function useRealtimeCall() {
     })
   }, [])
 
-  const setSpeakerBoost = useCallback((next) => {
-    setSpeakerBoostState(next)
-    if (gainNodeRef.current) gainNodeRef.current.gain.value = next ? 1.6 : 1
-  }, [])
+  const setSpeakerBoost = useCallback(
+    (next) => {
+      setSpeakerBoostState(next)
+      applyGainBoost(next)
+    },
+    [applyGainBoost],
+  )
 
   return {
     status,
