@@ -73,10 +73,11 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
     return (
       <CallActive
         persona={persona}
-        transcript={call.transcript}
         aiSpeaking={call.aiSpeaking}
         muted={call.muted}
+        speakerOn={call.speakerBoost}
         onToggleMute={call.setMuted}
+        onToggleSpeaker={call.setSpeakerBoost}
         onHangup={handleHangup}
       />
     )
