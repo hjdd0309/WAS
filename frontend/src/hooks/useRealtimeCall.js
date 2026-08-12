@@ -55,11 +55,30 @@ export default function useRealtimeCall() {
         break
       }
       case 'response.done': {
-        // AI 응답 종료 직후 잠깐 더 가드를 유지 — 에코 캔슬레이션이 완벽하지
-        // 않아 AI 목소리 꼬리가 마이크에 다시 잡혀 응답이 겹쳐 발생하는 걸 방지.
-        setTimeout(() => {
-          responseInFlightRef.current = false
-        }, 600)
+        // interrupt_response:true라 사용자가 끼어들면 서버가 진행 중이던 응답을
+        // 자동 취소하는데, 그 결과가 바로 이 이벤트로 status: 'cancelled'로 온다.
+        // 취소든 정상 종료든 여기서 즉시 상태를 정리해 다음 response.create가
+        // 막히지 않게 한다.
+        const cancelled = event.response?.status === 'cancelled'
+        console.log(
+          cancelled
+            ? '[realtime] response.cancel 확인 — barge-in으로 서버가 응답을 취소함'
+            : '[realtime] response.done',
+          event.response?.status,
+          event.response?.id,
+        )
+        responseInFlightRef.current = false
+        if (cancelled) {
+          // 잘려나간 AI 말풍선을 그대로 두면 영영 done:false로 남으니 마무리 처리.
+          setTranscript((prev) => {
+            const next = [...prev]
+            const idx = currentAiIndexRef.current
+            if (idx !== null && next[idx] && !next[idx].done) next[idx] = { ...next[idx], done: true }
+            return next
+          })
+          currentAiIndexRef.current = null
+          setAiSpeaking(false)
+        }
         break
       }
       case 'response.output_audio_transcript.delta': {
@@ -98,15 +117,19 @@ export default function useRealtimeCall() {
         break
       }
       case 'input_audio_buffer.speech_started': {
+        // 실제 오디오 트랙(WebRTC)을 여기서 끊거나 audioEl을 정지시킬 필요는
+        // 없다 — interrupt_response:true라 서버가 응답 생성을 취소하면 그
+        // 순간부터 오디오 델타 전송 자체가 멈추고, 취소 확정과 트랜스크립트/
+        // responseInFlightRef 정리는 response.done(status: 'cancelled')에서 한다.
+        if (responseInFlightRef.current) {
+          console.log('[realtime] barge-in 감지 — AI 응답 재생 중 사용자 발화 시작, 서버 취소 대기')
+        }
         setAiSpeaking(false)
         break
       }
       case 'input_audio_buffer.speech_stopped': {
-        // AI가 이미 말하는 중이면 스킵 — 대부분 마이크가 AI 목소리(에코)를
-        // 주운 것이지 실제 사용자 발화가 아니며, 여기서 응답을 또 트리거하면
-        // 응답이 꼬리를 물고 반복되는 루프가 생긴다.
-        if (responseInFlightRef.current) break
-
+        // 서버가 interrupt_response:true로 겹치는 응답을 알아서 취소해주므로,
+        // AI가 말하는 중인지 여부와 무관하게 항상 response.create를 보낸다.
         const dc = dcRef.current
         if (dc && dc.readyState === 'open') {
           dc.send(
@@ -119,6 +142,7 @@ export default function useRealtimeCall() {
               },
             }),
           )
+          console.log('[realtime] response.create 전송 — 사용자 발화 종료 감지')
           dc.send(JSON.stringify({ type: 'response.create' }))
         }
         break

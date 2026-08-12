@@ -62,10 +62,10 @@ export async function createCallSession(
               turn_detection: {
                 type: "server_vad",
                 silence_duration_ms: 700,
-                // 스피커 사용 시 마이크가 AI 목소리를 다시 주워서 응답이 겹치는 걸
-                // 막기 위해 자동 인터럽트/자동 응답 생성을 끔. 응답 트리거는
-                // 클라이언트(useRealtimeCall.ts)가 직접 함.
-                interrupt_response: false,
+                // 사용자가 AI 말 도중에 끼어들면(barge-in) 서버가 진행 중인 응답을
+                // 자동으로 취소하도록 위임한다. 응답 생성 트리거 자체는 여전히
+                // 클라이언트(useRealtimeCall.js)가 speech_stopped 시점에 직접 함.
+                interrupt_response: true,
                 create_response: false,
               },
             },
