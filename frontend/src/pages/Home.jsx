@@ -63,8 +63,8 @@ export default function Home({
             <img
               src={homeGreetingMascot}
               alt="위스피 마스코트"
-              className="absolute max-w-none h-[604.63%] w-[315.93%]"
-              style={{ left: '-162.96%', top: '-74.75%' }}
+              className="absolute max-w-none h-[547.18%] w-[286.24%]"
+              style={{ left: '-144.30%', top: '-64.43%' }}
             />
           </div>
         </div>
