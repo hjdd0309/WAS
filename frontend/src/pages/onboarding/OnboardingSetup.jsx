@@ -1,6 +1,6 @@
-import PillButton from '../../components/PillButton'
 import ProgressDots from '../../components/ProgressDots'
 import MonitorSetupForm from '../../components/MonitorSetupForm'
+import OnboardingActions from '../../components/OnboardingActions'
 
 export default function OnboardingSetup({
   selectedAppId,
@@ -9,6 +9,7 @@ export default function OnboardingSetup({
   onChangeLimit,
   personaId,
   onSelectPersona,
+  onBack,
   onNext,
 }) {
   return (
@@ -32,9 +33,7 @@ export default function OnboardingSetup({
 
       <div className="flex flex-col gap-6 pt-4">
         <ProgressDots total={6} activeIndex={4} />
-        <PillButton disabled={!selectedAppId} onClick={onNext}>
-          다음
-        </PillButton>
+        <OnboardingActions onBack={onBack} onNext={onNext} nextDisabled={!selectedAppId} />
       </div>
     </div>
   )

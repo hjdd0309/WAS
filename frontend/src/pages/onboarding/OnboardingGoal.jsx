@@ -1,10 +1,10 @@
-import PillButton from '../../components/PillButton'
 import ProgressDots from '../../components/ProgressDots'
+import OnboardingActions from '../../components/OnboardingActions'
 
 const GOALS = ['집중 시간', '잠들기 전', '퇴근 후', '공부할 때']
 const CATCH_ALL = '그냥 덜 보고싶어요'
 
-export default function OnboardingGoal({ selectedGoals, onToggleGoal, onNext }) {
+export default function OnboardingGoal({ selectedGoals, onToggleGoal, onBack, onNext }) {
   const isSelected = (goal) => selectedGoals.includes(goal)
 
   return (
@@ -52,7 +52,7 @@ export default function OnboardingGoal({ selectedGoals, onToggleGoal, onNext }) 
 
       <div className="flex flex-col gap-6">
         <ProgressDots total={6} activeIndex={3} />
-        <PillButton onClick={onNext}>다음</PillButton>
+        <OnboardingActions onBack={onBack} onNext={onNext} />
       </div>
     </div>
   )

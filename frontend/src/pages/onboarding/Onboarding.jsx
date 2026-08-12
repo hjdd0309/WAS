@@ -7,8 +7,11 @@ import OnboardingGoal from './OnboardingGoal'
 import OnboardingSetup from './OnboardingSetup'
 import OnboardingReady from './OnboardingReady'
 
-const STEP2_CROP = { containerW: 279, containerH: 314, w: '346.15%', h: '471.8%', left: '-127.21%', top: '-67.1%' }
-const STEP3_CROP = { containerW: 286, containerH: 396, w: '451.4%', h: '269.25%', left: '-339.74%', top: '-38.69%' }
+// 이미지가 있는 온보딩 단계마다 원본 크롭 비율(w/h)은 유지한 채, 세로 폭을
+// 250px로 통일해 단계를 넘길 때 마스코트 크기가 들쭉날쭉해 보이지 않게 한다.
+const STEP2_CROP = { containerW: 222, containerH: 250, w: '471.8%', h: '346.15%', left: '-127.21%', top: '-67.1%' }
+const STEP3_CROP = { containerW: 224, containerH: 310, w: '451.4%', h: '269.25%', left: '-339.74%', top: '-38.69%' }
+const STEP3_SLOT = { width: 240, height: 310 }
 
 export default function Onboarding({ onComplete }) {
   const [step, setStep] = useState(0)
@@ -23,6 +26,7 @@ export default function Onboarding({ onComplete }) {
     )
 
   const next = () => setStep((s) => Math.min(5, s + 1))
+  const back = () => setStep((s) => Math.max(0, s - 1))
 
   const finish = () =>
     onComplete({
@@ -56,14 +60,17 @@ export default function Onboarding({ onComplete }) {
               </>
             }
             activeIndex={1}
+            onBack={back}
             onNext={next}
           />
         )}
         {step === 2 && (
           <OnboardingInfo
             crop={STEP3_CROP}
+            slotSize={STEP3_SLOT}
             heading="함께 패턴을 보고"
             headingAccent="스스로를 알아가요"
+            headingSizeClass="text-[29px]"
             description={
               <>
                 주간 리포트로 사용 패턴을 확인하고,
@@ -73,12 +80,20 @@ export default function Onboarding({ onComplete }) {
                 선택적으로 공유할 수 있어요.
               </>
             }
+            descriptionSizeClass="text-[18px]"
+            descriptionMinHeight={95}
             activeIndex={2}
+            onBack={back}
             onNext={next}
           />
         )}
         {step === 3 && (
-          <OnboardingGoal selectedGoals={selectedGoals} onToggleGoal={toggleGoal} onNext={next} />
+          <OnboardingGoal
+            selectedGoals={selectedGoals}
+            onToggleGoal={toggleGoal}
+            onBack={back}
+            onNext={next}
+          />
         )}
         {step === 4 && (
           <OnboardingSetup
@@ -88,10 +103,11 @@ export default function Onboarding({ onComplete }) {
             onChangeLimit={setLimitMinutes}
             personaId={personaId}
             onSelectPersona={setPersonaId}
+            onBack={back}
             onNext={next}
           />
         )}
-        {step === 5 && <OnboardingReady onComplete={finish} />}
+        {step === 5 && <OnboardingReady onBack={back} onComplete={finish} />}
       </div>
     </div>
   )

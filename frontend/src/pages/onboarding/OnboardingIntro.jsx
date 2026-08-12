@@ -1,6 +1,6 @@
 import onboardingComposite from '../../assets/illustrations/onboarding-composite.png'
-import PillButton from '../../components/PillButton'
 import ProgressDots from '../../components/ProgressDots'
+import OnboardingActions from '../../components/OnboardingActions'
 
 export default function OnboardingIntro({ onNext }) {
   return (
@@ -8,7 +8,7 @@ export default function OnboardingIntro({ onNext }) {
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col items-center justify-center gap-7 overflow-y-auto text-center">
         <h1 className="text-[32px] font-semibold text-white">잠깐만요!</h1>
 
-        <div className="relative h-[226px] w-[204px] overflow-hidden rounded-[29px]">
+        <div className="relative h-[250px] w-[226px] overflow-hidden rounded-[29px]">
           <img
             src={onboardingComposite}
             alt="위스피 마스코트"
@@ -26,7 +26,7 @@ export default function OnboardingIntro({ onNext }) {
 
       <div className="flex flex-col gap-6">
         <ProgressDots total={6} activeIndex={0} />
-        <PillButton onClick={onNext}>시작하기</PillButton>
+        <OnboardingActions onNext={onNext} ctaLabel="시작하기" />
       </div>
     </div>
   )
