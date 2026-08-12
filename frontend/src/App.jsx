@@ -56,19 +56,21 @@ export default function App() {
   const persona = useMemo(() => getPersona(soonestApp?.personaId), [soonestApp])
 
   const handleOnboardingComplete = (data) => {
-    setProfile({
+    setProfile((prev) => ({
+      ...prev,
       goals: data.goals,
       apps: [{ id: crypto.randomUUID(), appId: data.appId, limitMinutes: data.limitMinutes, personaId: data.personaId }],
       interests: data.interests,
       plan: data.plan,
-      previousSummary: '',
-      routines: profile.routines,
       onboarded: true,
-    })
+    }))
     setScreen('home')
   }
 
   const updateProfile = (partial) => setProfile((prev) => ({ ...prev, ...partial }))
+
+  const addCallLog = (entry) =>
+    setProfile((prev) => ({ ...prev, callLog: [entry, ...prev.callLog] }))
 
   const addRoutine = (label) =>
     setProfile((prev) => ({
@@ -142,6 +144,7 @@ export default function App() {
           profile={profile}
           onHome={() => setScreen('home')}
           onSaveSummary={(previousSummary) => updateProfile({ previousSummary })}
+          onLogCall={addCallLog}
         />
       )}
 
@@ -176,9 +179,9 @@ export default function App() {
         />
       )}
 
-      {screen === 'log' && <Log {...tabProps} />}
+      {screen === 'log' && <Log callLog={profile.callLog} {...tabProps} />}
 
-      {screen === 'report' && <Report {...tabProps} />}
+      {screen === 'report' && <Report callLog={profile.callLog} {...tabProps} />}
 
       {screen === 'settings' && (
         <Settings

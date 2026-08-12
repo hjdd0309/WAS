@@ -11,6 +11,29 @@ const DEFAULT_ROUTINES = [
   { id: 'r5', label: '수영', color: '#586deb' },
 ]
 
+// 처음 방문했을 때 기록 화면이 텅 비어 보이지 않도록 "어제" 통화 2건만 시드로
+// 깔아둔다. "오늘" 항목은 실제로 통화를 마쳐야만 쌓인다 — CallSplash 참고.
+const DAY_MS = 24 * 60 * 60 * 1000
+const seedNow = Date.now()
+const DEFAULT_CALL_LOG = [
+  {
+    id: 'seed1',
+    timestamp: seedNow - DAY_MS - 3 * 60 * 60 * 1000,
+    personaId: 'tsundereBro',
+    appId: 'kakaotalk',
+    durationSeconds: 29,
+    quote: '까칠하게 굴길래 저도 모르게 웃음이 났어요',
+  },
+  {
+    id: 'seed2',
+    timestamp: seedNow - DAY_MS - 8 * 60 * 60 * 1000,
+    personaId: 'trainer',
+    appId: 'youtube',
+    durationSeconds: 51,
+    quote: '오늘 운동 언제 갈 거냐고 다그쳤어요',
+  },
+]
+
 const defaultState = {
   onboarded: false,
   goals: [],
@@ -20,6 +43,9 @@ const defaultState = {
   plan: '',
   previousSummary: '',
   routines: DEFAULT_ROUTINES,
+  // callLog: [{ id, timestamp, personaId, appId, durationSeconds, quote }] — 실제로 마친
+  // 통화가 여기 쌓인다. 기록/리포트 화면이 진짜 데이터를 보여주는 유일한 소스.
+  callLog: DEFAULT_CALL_LOG,
 }
 
 export function loadState() {

@@ -19,7 +19,14 @@ function deriveSummary(transcript) {
   return text.slice(0, MAX_SUMMARY_LENGTH)
 }
 
-export default function CallSplash({ app, persona, profile, onHome, onSaveSummary }) {
+// 기록 화면에 보여줄 한 줄 — 마지막으로 오간 말을 그대로 인용한다.
+function deriveQuote(transcript) {
+  const lines = transcript.filter((line) => line.done && line.text.trim())
+  if (lines.length === 0) return ''
+  return lines[lines.length - 1].text.trim().slice(0, 60)
+}
+
+export default function CallSplash({ app, persona, profile, onHome, onSaveSummary, onLogCall }) {
   const call = useRealtimeCall()
   const startedAtRef = useRef(null)
   const [duration, setDuration] = useState(0)
@@ -44,10 +51,19 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
   }, [call.status])
 
   const handleHangup = () => {
-    if (startedAtRef.current) {
-      setDuration(Math.floor((Date.now() - startedAtRef.current) / 1000))
-    }
+    const finalDuration = startedAtRef.current
+      ? Math.floor((Date.now() - startedAtRef.current) / 1000)
+      : 0
+    setDuration(finalDuration)
     onSaveSummary?.(deriveSummary(call.transcript))
+    onLogCall?.({
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+      personaId: persona.id,
+      appId: app.id,
+      durationSeconds: finalDuration,
+      quote: deriveQuote(call.transcript),
+    })
     call.hangup()
   }
 

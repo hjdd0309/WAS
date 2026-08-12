@@ -49,8 +49,8 @@ export default function Home({
           </div>
         )}
 
-        <div className="mt-5 flex items-start justify-between gap-3">
-          <div>
+        <div className="mt-5 flex items-start justify-start gap-5">
+          <div className="pl-3">
             <p className="text-[15px] text-[#b9b9b9]">안녕하세요,</p>
             <p className="mt-1 text-[28px] font-bold text-white">잠깐만요!</p>
             <p className="mt-3 max-w-[180px] text-[13px] leading-[1.6] text-[#b9b9b9]">
@@ -59,12 +59,12 @@ export default function Home({
               저와 잠깐 <span className="text-accent">다른 얘기</span> 해볼까요?
             </p>
           </div>
-          <div className="relative h-[106px] w-[130px] shrink-0 overflow-hidden rounded-2xl">
+          <div className="animate-float relative h-[130px] w-[115px] shrink-0 overflow-hidden rounded-2xl">
             <img
               src={homeGreetingMascot}
               alt="위스피 마스코트"
-              className="absolute max-w-none h-[645.25%] w-[243.44%]"
-              style={{ left: '-131.95%', top: '-85.47%' }}
+              className="absolute max-w-none h-[604.63%] w-[315.93%]"
+              style={{ left: '-162.96%', top: '-74.75%' }}
             />
           </div>
         </div>
