@@ -11,6 +11,7 @@ const defaultState = {
   personaId: null,
   interests: [],
   plan: '',
+  previousSummary: '',
 }
 
 export function loadState() {

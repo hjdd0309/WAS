@@ -40,12 +40,21 @@ export default function App() {
   }
 
   return (
-    // 홈 인디케이터 제스처는 CallSplash에서만 켠다 — BottomNav가 있는 화면에서 켜두면
-    // 그 히트존이 기록/리포트 탭 버튼 위에 겹쳐 탭을 가로채 버린다.
-    <PhoneFrame onHomeGesture={screen === 'callSplash' ? () => setScreen('home') : undefined}>
+    // 통화 화면은 실제 WebRTC 연결을 들고 있어서, 정리(hangup) 없이 제스처로
+    // 바로 홈으로 빠져나가면 마이크/연결이 안 끊긴 채 남는다. 그래서 홈 인디케이터
+    // 제스처는 항상 꺼두고, 각 화면 자체의 종료 버튼(취소/통화종료/홈으로)만 쓴다.
+    <PhoneFrame>
       {screen === 'onboarding' && <Onboarding onComplete={handleOnboardingComplete} />}
 
-      {screen === 'callSplash' && <CallSplash onDismiss={() => setScreen('home')} />}
+      {screen === 'callSplash' && (
+        <CallSplash
+          app={app}
+          persona={persona}
+          profile={profile}
+          onHome={() => setScreen('home')}
+          onSaveSummary={(previousSummary) => updateProfile({ previousSummary })}
+        />
+      )}
 
       {screen === 'home' && <Home app={app} persona={persona} limitMinutes={profile.limitMinutes} {...tabProps} />}
 
