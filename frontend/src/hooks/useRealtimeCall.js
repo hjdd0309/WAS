@@ -181,6 +181,8 @@ export default function useRealtimeCall() {
   // WebAudio 그래프를 통한 볼륨 부스트를 켜고 끈다. 켤 때만 audioEl을
   // 음소거하고 AudioContext/GainNode 경로로 우회 재생한다 — 끄면 다시
   // audioEl 기본 재생으로 되돌아가 에코 캔슬레이션 레퍼런스를 정상적으로 탄다.
+  // setSinkId로 실제 수화구/스피커 라우팅이 안 되는 기기(iOS 등)에서 최소한의
+  // 체감 차이라도 주기 위한 폴백 용도로만 쓴다 — applyAudioRoute 참고.
   const applyGainBoost = useCallback((enabled) => {
     const audioEl = audioElRef.current
     const remoteStream = remoteStreamRef.current
@@ -209,6 +211,49 @@ export default function useRealtimeCall() {
       audioEl.muted = false
     }
   }, [])
+
+  // 실제 전화처럼: 스피커가 꺼져 있으면 수화구(이어피스)로, 켜져 있으면
+  // 하단 스피커로 오디오 출력 자체를 전환한다. Android Chrome은 마이크
+  // 권한이 이미 허용된 상태에서 enumerateDevices()로 "Earpiece"/"Speaker"
+  // 같은 출력 장치를 따로 노출하는 경우가 있어, setSinkId로 그 장치를
+  // 직접 골라 재생 경로를 바꿀 수 있다. 이어폰/블루투스가 연결돼 있으면
+  // 사용자가 이미 고른 출력을 존중해 라우팅을 건드리지 않는다.
+  // setSinkId 자체가 없거나(iOS Safari 등) 라우팅에 실패하면, 최소한의
+  // 체감 차이라도 주기 위해 게인 부스트로 폴백한다.
+  const applyAudioRoute = useCallback(
+    async (speakerOn) => {
+      const audioEl = audioElRef.current
+      if (!audioEl) return
+
+      let routed = false
+      if (typeof audioEl.setSinkId === 'function' && navigator.mediaDevices?.enumerateDevices) {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices()
+          const outputs = devices.filter((d) => d.kind === 'audiooutput')
+          const hasExternalOutput = outputs.some((d) => /bluetooth|headset|headphone|wired/i.test(d.label))
+          if (!hasExternalOutput) {
+            const wanted = speakerOn ? /speaker/i : /earpiece|receiver/i
+            const target = outputs.find((d) => wanted.test(d.label))
+            if (target) {
+              await audioEl.setSinkId(target.deviceId)
+              routed = true
+              console.log(
+                `[realtime] 오디오 출력 전환: ${speakerOn ? '스피커' : '수화구(이어피스)'}`,
+                target.label,
+              )
+            }
+          }
+        } catch (err) {
+          console.warn('[realtime] setSinkId 라우팅 실패 — 게인 부스트로 폴백', err)
+        }
+      }
+
+      // 실제 장치 라우팅에 성공했으면 인위적 게인 부스트는 끈다 — 장치
+      // 자체(수화구 vs 스피커)가 소리 크기 차이를 만들어준다.
+      applyGainBoost(routed ? false : speakerOn)
+    },
+    [applyGainBoost],
+  )
 
   const hangup = useCallback(() => {
     teardown()
@@ -273,13 +318,14 @@ export default function useRealtimeCall() {
           // 기본은 audioEl로 그대로 재생한다. WebAudio 그래프로 우회 재생하면
           // 브라우저(특히 Android Chrome)의 내장 에코 캔슬레이션이 재생 중인
           // 오디오를 레퍼런스로 잡지 못해, AI 목소리가 마이크로 다시 들어와
-          // 엉뚱한 발화로 인식되는 문제가 생긴다. 부스트가 실제로 켜졌을 때만
-          // WebAudio 경로를 사용한다(applyGainBoost 참고).
+          // 엉뚱한 발화로 인식되는 문제가 생긴다. 실제 장치 라우팅이 안 될 때만
+          // WebAudio 게인 폴백을 쓴다(applyAudioRoute 참고).
           audioEl.srcObject = remoteStream
           audioEl.muted = false
           audioEl.volume = DEFAULT_PLAYBACK_VOLUME
           audioEl.play().catch(() => {})
-          if (speakerBoost) applyGainBoost(true)
+          // 통화가 시작될 때도 실제 전화처럼 기본은 수화구(스피커 off) 라우팅.
+          applyAudioRoute(speakerBoost)
         }
 
         const dc = pc.createDataChannel('oai-events')
@@ -326,7 +372,7 @@ export default function useRealtimeCall() {
         setStatus('error')
       }
     },
-    [handleEvent, teardown, speakerBoost, applyGainBoost],
+    [handleEvent, teardown, speakerBoost, applyAudioRoute],
   )
 
   const retry = useCallback(
@@ -350,9 +396,9 @@ export default function useRealtimeCall() {
   const setSpeakerBoost = useCallback(
     (next) => {
       setSpeakerBoostState(next)
-      applyGainBoost(next)
+      applyAudioRoute(next)
     },
-    [applyGainBoost],
+    [applyAudioRoute],
   )
 
   return {
