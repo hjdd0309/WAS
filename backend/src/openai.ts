@@ -35,9 +35,17 @@ export async function createCallSession(
     persona,
   );
 
+  // OpenAI 쪽이 드물게 느려지거나 멈추면 이 fetch에 타임아웃이 없어서 Vercel
+  // 함수 타임아웃(기본 10초)에 그대로 끌려가 지저분한 504가 나간다. 8초로
+  // 먼저 끊어서 우리 쪽에서 깔끔한 에러로 처리한다.
+  const timeoutMs = 8_000;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const upstream = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
@@ -78,10 +86,15 @@ export async function createCallSession(
 
     return { ok: true, clientSecret: data.value, model };
   } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      return { ok: false, status: 504, message: `OpenAI realtime session request timed out after ${timeoutMs}ms` };
+    }
     return {
       ok: false,
       status: 500,
       message: err instanceof Error ? err.message : "realtime session request failed",
     };
+  } finally {
+    clearTimeout(timeout);
   }
 }
