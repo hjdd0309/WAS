@@ -107,7 +107,7 @@ export default function Onboarding({ onComplete }) {
             onNext={next}
           />
         )}
-        {step === 5 && <OnboardingReady onBack={back} onComplete={finish} />}
+        {step === 5 && <OnboardingReady onComplete={finish} />}
       </div>
     </div>
   )
