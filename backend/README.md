@@ -24,7 +24,7 @@ npm run dev
 {
   "interests": ["영화", "러닝"],
   "plan": "오늘 저녁까지 과제 제출하기",
-  "personaId": "bestie",
+  "personaId": "mom",
   "previousSummary": "지난번엔 다음 주 러닝 대회 나간다고 했었음"
 }
 ```

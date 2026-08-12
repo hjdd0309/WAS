@@ -42,8 +42,8 @@ export const openApiSpec = {
                   },
                   personaId: {
                     type: "string",
-                    enum: ["bestie", "tsundere", "auntie", "hype"],
-                    example: "bestie",
+                    enum: ["mom", "collegeFriend", "grandma", "churchBro", "trainer", "tsundereBro"],
+                    example: "mom",
                   },
                   previousSummary: {
                     type: "string",

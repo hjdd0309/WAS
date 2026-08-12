@@ -1,0 +1,33 @@
+import onboardingComposite from '../../assets/illustrations/onboarding-composite.png'
+import PillButton from '../../components/PillButton'
+import ProgressDots from '../../components/ProgressDots'
+
+export default function OnboardingIntro({ onNext }) {
+  return (
+    <div className="flex h-full flex-col px-6 pb-8 pt-4">
+      <div className="no-scrollbar flex min-h-0 flex-1 flex-col items-center justify-center gap-7 overflow-y-auto text-center">
+        <h1 className="text-[32px] font-semibold text-white">잠깐만요!</h1>
+
+        <div className="relative h-[226px] w-[204px] overflow-hidden rounded-[29px]">
+          <img
+            src={onboardingComposite}
+            alt="위스피 마스코트"
+            className="absolute max-w-none h-[409.83%] w-[550.49%]"
+            style={{ left: '-24.02%', top: '-89.87%' }}
+          />
+        </div>
+
+        <p className="text-[17px] leading-[1.6] text-[#919191]">
+          화면에 빠진 당신을
+          <br />
+          위스피가 불러낼게요.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-6">
+        <ProgressDots total={6} activeIndex={0} />
+        <PillButton onClick={onNext}>시작하기</PillButton>
+      </div>
+    </div>
+  )
+}

@@ -1,122 +1,67 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useMemo, useState } from 'react'
+import PhoneFrame from './components/PhoneFrame'
+import Onboarding from './pages/onboarding/Onboarding'
+import Home from './pages/Home'
+import Log from './pages/Log'
+import Report from './pages/Report'
+import Settings from './pages/Settings'
+import CallSplash from './pages/CallSplash'
+import { getApp } from './apps'
+import { getPersona } from './personas'
+import { loadState, saveState } from './lib/storage'
 
-function App() {
-  const [count, setCount] = useState(0)
+const initial = loadState()
+const TABS = ['home', 'log', 'report', 'settings']
+
+export default function App() {
+  // screen: 지금 보여줄 화면. 온보딩을 마치기 전엔 항상 onboarding부터 시작한다.
+  const [screen, setScreen] = useState(initial.onboarded ? 'home' : 'onboarding')
+  const [profile, setProfile] = useState(initial)
+
+  useEffect(() => {
+    saveState(profile)
+  }, [profile])
+
+  const app = useMemo(() => getApp(profile.appId), [profile.appId])
+  const persona = useMemo(() => getPersona(profile.personaId), [profile.personaId])
+
+  const handleOnboardingComplete = (data) => {
+    setProfile({ ...data, onboarded: true })
+    setScreen('home')
+  }
+
+  const updateProfile = (partial) => setProfile((prev) => ({ ...prev, ...partial }))
+
+  const tabProps = {
+    onNavigate: (tab) => {
+      if (TABS.includes(tab)) setScreen(tab)
+    },
+    onCallPress: () => setScreen('callSplash'),
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    // 홈 인디케이터 제스처는 CallSplash에서만 켠다 — BottomNav가 있는 화면에서 켜두면
+    // 그 히트존이 기록/리포트 탭 버튼 위에 겹쳐 탭을 가로채 버린다.
+    <PhoneFrame onHomeGesture={screen === 'callSplash' ? () => setScreen('home') : undefined}>
+      {screen === 'onboarding' && <Onboarding onComplete={handleOnboardingComplete} />}
 
-      <div className="ticks"></div>
+      {screen === 'callSplash' && <CallSplash onDismiss={() => setScreen('home')} />}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {screen === 'home' && <Home app={app} persona={persona} limitMinutes={profile.limitMinutes} {...tabProps} />}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {screen === 'log' && <Log {...tabProps} />}
+
+      {screen === 'report' && <Report {...tabProps} />}
+
+      {screen === 'settings' && (
+        <Settings
+          app={app}
+          persona={persona}
+          limitMinutes={profile.limitMinutes}
+          onUpdateProfile={updateProfile}
+          {...tabProps}
+        />
+      )}
+    </PhoneFrame>
   )
 }
-
-export default App
