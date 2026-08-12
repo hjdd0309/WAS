@@ -26,8 +26,8 @@ export default function MonitorSetupForm({
                 selected ? 'border-accent bg-[#a289be]' : 'border-accent/40 bg-[#241e28]'
               }`}
             >
-              <div className="flex size-[45px] shrink-0 items-center justify-center rounded-[10px] bg-white text-xl">
-                {app.emoji}
+              <div className="size-[45px] shrink-0 overflow-hidden rounded-[10px]">
+                <img src={app.icon} alt="" className="h-full w-full object-cover" />
               </div>
               <span className="flex-1 text-[18px] font-semibold text-white">{app.name}</span>
               {selected && (

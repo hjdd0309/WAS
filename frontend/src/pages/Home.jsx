@@ -80,8 +80,8 @@ export default function Home({ app, persona, limitMinutes, awaySeconds = 0, onCa
             <span className="text-[11px] font-medium text-accent-soft">지금</span>
           </div>
           <div className="mt-3 flex items-center gap-3">
-            <div className="flex size-[45px] shrink-0 items-center justify-center rounded-[10px] bg-white text-xl">
-              {app.emoji}
+            <div className="size-[45px] shrink-0 overflow-hidden rounded-[10px]">
+              <img src={app.icon} alt="" className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[15px] font-semibold text-white">{app.name}</p>

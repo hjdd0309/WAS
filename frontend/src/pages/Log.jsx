@@ -61,8 +61,9 @@ export default function Log({ onNavigate, onCallPress }) {
                           </p>
                           <span className="shrink-0 text-[11px] text-[#919191]">{entry.time}</span>
                         </div>
-                        <p className="mt-0.5 truncate text-[12px] text-[#919191]">
-                          {app.emoji} {app.name} · {entry.duration}
+                        <p className="mt-0.5 flex items-center gap-1 truncate text-[12px] text-[#919191]">
+                          <img src={app.icon} alt="" className="size-3.5 shrink-0 rounded-[3px]" />
+                          {app.name} · {entry.duration}
                         </p>
                         <p className="mt-1.5 truncate text-[12px] leading-[1.4] text-[#c9b8e6]">
                           “{entry.quote}”

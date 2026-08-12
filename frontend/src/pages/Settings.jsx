@@ -80,8 +80,8 @@ export default function Settings({ app, persona, limitMinutes, onUpdateProfile, 
               </div>
 
               <div className="mt-4 flex items-center gap-3">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-[10px] bg-white text-lg">
-                  {app.emoji}
+                <div className="size-11 shrink-0 overflow-hidden rounded-[10px]">
+                  <img src={app.icon} alt="" className="h-full w-full object-cover" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[14px] font-semibold text-white">{app.name}</p>

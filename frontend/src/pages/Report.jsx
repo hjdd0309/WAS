@@ -61,8 +61,9 @@ export default function Report({ onNavigate, onCallPress }) {
               return (
                 <div key={appId}>
                   <div className="mb-1.5 flex items-center justify-between text-[12px]">
-                    <span className="font-medium text-white">
-                      {app.emoji} {app.name}
+                    <span className="flex items-center gap-1.5 font-medium text-white">
+                      <img src={app.icon} alt="" className="size-3.5 shrink-0 rounded-[3px]" />
+                      {app.name}
                     </span>
                     <span className="text-[#919191]">{percent}%</span>
                   </div>
