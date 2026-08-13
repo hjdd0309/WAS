@@ -107,15 +107,6 @@ export default function useRealtimeCall() {
         currentAiIndexRef.current = null
         break
       }
-      case 'conversation.item.input_audio_transcription.completed': {
-        if (event.transcript?.trim()) {
-          setTranscript((prev) => [
-            ...prev,
-            { speaker: 'user', text: event.transcript ?? '', done: true },
-          ])
-        }
-        break
-      }
       case 'input_audio_buffer.speech_started': {
         // 실제 오디오 트랙(WebRTC)을 여기서 끊거나 audioEl을 정지시킬 필요는
         // 없다 — interrupt_response:true라 서버가 응답 생성을 취소하면 그

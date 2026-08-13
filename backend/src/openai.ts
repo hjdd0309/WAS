@@ -58,7 +58,6 @@ export async function createCallSession(
           audio: {
             output: { voice },
             input: {
-              transcription: { model: "whisper-1" },
               turn_detection: {
                 type: "server_vad",
                 silence_duration_ms: 700,
