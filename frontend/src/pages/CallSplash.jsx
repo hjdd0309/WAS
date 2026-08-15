@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import useRealtimeCall from '../hooks/useRealtimeCall'
+import { postJson } from '../lib/api'
 import CallConnecting from './call/CallConnecting'
 import CallActive from './call/CallActive'
 import CallSummaryScreen from './call/CallSummaryScreen'
@@ -55,7 +56,9 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
       ? Math.floor((Date.now() - startedAtRef.current) / 1000)
       : 0
     setDuration(finalDuration)
-    onSaveSummary?.(deriveSummary(call.transcript))
+    const summary = deriveSummary(call.transcript)
+    onSaveSummary?.(summary)
+    postJson('/api/call/summary', { summary })
     onLogCall?.({
       id: crypto.randomUUID(),
       timestamp: Date.now(),
@@ -91,6 +94,7 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
     <CallConnecting
       status={call.status}
       errorMessage={call.errorMessage}
+      persona={persona}
       onRetry={handleRetry}
       onCancel={onHome}
     />

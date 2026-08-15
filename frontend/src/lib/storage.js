@@ -3,6 +3,21 @@
 // 프론트(브라우저)가 들고 있어야 한다.
 const STORAGE_KEY = 'was:v1'
 
+// 로그인 없이 브라우저별로 하나씩 발급하는 익명 식별자. 서버에 프로필을
+// 저장/조회할 때 x-user-id 헤더로 실어 보낸다 — QR로 들어온 관객/심사위원도
+// 각자 별개 사용자로 자동 분리된다.
+const USER_ID_KEY = 'was:userId'
+
+export function getUserId() {
+  if (typeof window === 'undefined') return ''
+  let id = window.localStorage.getItem(USER_ID_KEY)
+  if (!id) {
+    id = crypto.randomUUID()
+    window.localStorage.setItem(USER_ID_KEY, id)
+  }
+  return id
+}
+
 const DEFAULT_ROUTINES = [
   { id: 'r1', label: '공모전 준비', color: '#ff9090' },
   { id: 'r2', label: '책읽기', color: '#511010' },

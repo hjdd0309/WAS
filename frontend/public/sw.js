@@ -1,9 +1,10 @@
 // 잠깐만 서비스워커.
 //
-// 이번 스코프에서는 서버가 보내는 진짜 Web Push(구독+VAPID)는 구현하지 않는다.
-// 대신 페이지 JS(useAwayMonitor)가 조건을 확인해 이 서비스워커를 통해
-// "로컬 알림"(registration.showNotification)만 띄운다 — 페이지가 완전히
-// 종료된 뒤에도 울리게 하려면 서버 스케줄링이 필요한데, 이번 데모 범위 밖이다.
+// 서버(backend/src/routes/push.ts)가 web-push로 보내는 진짜 Web Push를
+// 여기서 받아 OS 알림으로 띄운다. 페이지 JS(useAwayMonitor)는 임계값 도달을
+// 감지해 /api/push/send를 호출하기만 하고, 실제 알림 표시는 항상 이 push
+// 이벤트를 통해서 일어난다 — 탭이 완전히 닫혀 있어도 브라우저/OS가 살아있으면
+// 수신된다(단, 브라우저 프로세스 자체가 종료된 경우는 플랫폼 제약으로 예외).
 
 const CALL_URL = '/?call=1'
 
@@ -13,6 +14,29 @@ self.addEventListener('install', () => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
+})
+
+self.addEventListener('push', (event) => {
+  let payload = {}
+  try {
+    payload = event.data ? event.data.json() : {}
+  } catch {
+    // 페이로드가 없거나 JSON이 아니면 기본값으로 대체
+  }
+
+  const title = payload.title || '잠깐만'
+  const body = payload.body || '전화하고 있어요 📞'
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: 'was-call',
+      requireInteraction: true,
+      data: { url: payload.url || CALL_URL },
+    }),
+  )
 })
 
 self.addEventListener('notificationclick', (event) => {

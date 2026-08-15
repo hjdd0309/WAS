@@ -1,8 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
+import { API_BASE } from '../lib/api'
+import { getUserId } from '../lib/storage'
 
-// 배포 시 반드시 실제 백엔드 URL로 오버라이드해야 함 (frontend/.env.example 참고).
-// 백엔드는 프론트와 별도로 배포되므로(Vercel 등) 상대 경로로는 닿지 않는다.
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')
 const APP_SECRET = import.meta.env.VITE_APP_SHARED_SECRET || ''
 
 // 매 응답 직전에 톤을 다시 상기시켜, 대화가 길어질수록 모델이 시스템
@@ -19,6 +18,7 @@ const DEFAULT_PLAYBACK_VOLUME = 0.4
 const ERROR_MESSAGES = {
   network: '통화 서버에 연결할 수 없어요. 네트워크를 확인해주세요.',
   session: '통화를 시작할 수 없어요. 잠시 후 다시 시도해주세요.',
+  busy: '지금 많이 몰렸어요. 잠시 후 다시 걸어주세요.',
   mic: '마이크 권한이 필요해요. 브라우저 설정에서 허용해주세요.',
   webrtc: '통화 연결에 실패했어요. 다시 시도해주세요.',
 }
@@ -268,7 +268,7 @@ export default function useRealtimeCall() {
       setErrorMessage('')
 
       try {
-        const headers = { 'Content-Type': 'application/json' }
+        const headers = { 'Content-Type': 'application/json', 'x-user-id': getUserId() }
         if (APP_SECRET) headers['x-app-secret'] = APP_SECRET
 
         let sessionRes
@@ -287,6 +287,7 @@ export default function useRealtimeCall() {
           throw new Error('network')
         }
 
+        if (sessionRes.status === 429) throw new Error('busy')
         if (!sessionRes.ok) throw new Error('session')
 
         const data = await sessionRes.json().catch(() => null)

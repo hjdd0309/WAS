@@ -1,6 +1,6 @@
 import mainLogo from '../../assets/illustrations/main-logo.png'
 
-export default function CallConnecting({ status, errorMessage, onRetry, onCancel }) {
+export default function CallConnecting({ status, errorMessage, persona, onRetry, onCancel }) {
   const isError = status === 'error'
 
   return (
@@ -24,7 +24,9 @@ export default function CallConnecting({ status, errorMessage, onRetry, onCancel
             <p className="text-[14px] leading-[1.6] text-white/60">{errorMessage}</p>
           </>
         ) : (
-          <p className="text-[23px] font-extrabold text-white">잠깐만</p>
+          <p className="text-[23px] font-extrabold text-white">
+            {persona ? `${persona.name}이(가) 전화를 걸고 있어요` : '잠깐만'}
+          </p>
         )}
       </div>
 
@@ -45,7 +47,9 @@ export default function CallConnecting({ status, errorMessage, onRetry, onCancel
             </button>
           </>
         ) : (
-          <p className="text-center text-[13px] text-white/50">연결하는 중...</p>
+          <p className="text-center text-[13px] text-white/50">
+            {persona ? `${persona.emoji} 연결하는 중...` : '연결하는 중...'}
+          </p>
         )}
       </div>
     </div>
