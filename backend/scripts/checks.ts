@@ -3,10 +3,19 @@ export interface TestState {
   plan: string;
   redirectTurn: number | null;
   endCallTurn: number | null;
+  totalTokens: number;
 }
 
 export function createTestState(plan: string): TestState {
-  return { turn: 0, plan, redirectTurn: null, endCallTurn: null };
+  return { turn: 0, plan, redirectTurn: null, endCallTurn: null, totalTokens: 0 };
+}
+
+// Chat Completions/Realtime 응답 모두 { total_tokens } 형태의 usage를 준다.
+// 턴마다 바로 찍어주고 누적해서, 실행 중에도 얼마나 태우고 있는지 감을 잡을 수 있게 한다.
+export function recordUsage(usage: { total_tokens?: number } | undefined, state: TestState) {
+  if (!usage?.total_tokens) return;
+  state.totalTokens += usage.total_tokens;
+  console.log(`[토큰] 이번 턴 ${usage.total_tokens} / 누적 ${state.totalTokens}`);
 }
 
 // plan 문장의 단어가 응답에 등장하면 "재정향(3번)이 실제로 일어났다"는 대략적인
@@ -34,4 +43,5 @@ export function printSummary(state: TestState) {
   console.log("\n--- 요약 ---");
   console.log(`재정향: ${state.redirectTurn !== null ? `감지됨 (턴 ${state.redirectTurn})` : "감지 안 됨"}`);
   console.log(`end_call: ${state.endCallTurn !== null ? `호출됨 (턴 ${state.endCallTurn})` : "호출 안 됨"}`);
+  console.log(`총 토큰: ${state.totalTokens}`);
 }

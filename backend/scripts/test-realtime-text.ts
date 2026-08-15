@@ -15,7 +15,7 @@ import readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { getPersona, DEFAULT_PERSONA_ID } from "../src/personas";
 import { buildRealtimeInstructions } from "../src/realtimeInstructions";
-import { createTestState, checkRedirect, checkEndCall, printSummary } from "./checks";
+import { createTestState, checkRedirect, checkEndCall, recordUsage, printSummary } from "./checks";
 
 function parseArgs() {
   const args = new Map<string, string>();
@@ -105,11 +105,16 @@ async function main() {
         const item = event.item;
         if (item?.type === "function_call" && item?.name === "end_call") {
           checkEndCall(state);
-          console.log("[이 시점에 실제 통화라면 hangup() 실행됨]");
+          console.log("[end_call 호출 — 실제 통화라면 여기서 hangup() 실행됨. 시뮬레이션도 종료]");
+          printSummary(state);
+          rl.close();
+          socket.close();
+          process.exit(0);
         }
         break;
       }
       case "response.done": {
+        recordUsage(event.response?.usage, state);
         state.turn += 1;
         const userInput = await rl.question("\n나: ");
         socket.send(

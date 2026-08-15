@@ -13,7 +13,7 @@ import readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { getPersona, DEFAULT_PERSONA_ID } from "../src/personas";
 import { buildRealtimeInstructions } from "../src/realtimeInstructions";
-import { createTestState, checkRedirect, checkEndCall, printSummary } from "./checks";
+import { createTestState, checkRedirect, checkEndCall, recordUsage, printSummary } from "./checks";
 
 type ChatMessage = {
   role: "system" | "user" | "assistant";
@@ -75,12 +75,20 @@ async function main() {
   // 실제 통화는 AI가 먼저 거는 구조이므로, 첫 턴은 유저 입력 없이 AI 시작 멘트를 먼저 받는다.
   await respond(history, apiKey, model, state);
 
-  while (true) {
+  // end_call이 불리면 실제 통화도 거기서 끊기므로 시뮬레이션도 여기서 종료.
+  // 계속 이어가면 tool_calls에 대한 tool 응답 메시지가 없어 다음 요청이
+  // 400 에러("tool_calls must be followed by tool messages")로 실패한다.
+  while (state.endCallTurn === null) {
     const userInput = await rl.question("나: ");
     if (!userInput.trim()) continue;
     history.push({ role: "user", content: userInput });
     await respond(history, apiKey, model, state);
   }
+
+  console.log("[end_call로 통화 종료 — 시뮬레이션도 여기서 끝냅니다]");
+  printSummary(state);
+  rl.close();
+  process.exit(0);
 }
 
 async function respond(history: ChatMessage[], apiKey: string, model: string, state: ReturnType<typeof createTestState>) {
@@ -98,7 +106,10 @@ async function respond(history: ChatMessage[], apiKey: string, model: string, st
     process.exit(1);
   }
 
-  const data = (await res.json()) as { choices: { message: ChatMessage }[] };
+  const data = (await res.json()) as {
+    choices: { message: ChatMessage }[];
+    usage?: { total_tokens?: number };
+  };
   const message = data.choices[0]?.message;
   const reply = message?.content;
 
@@ -112,6 +123,7 @@ async function respond(history: ChatMessage[], apiKey: string, model: string, st
     console.log(`AI: ${reply}\n`);
     checkRedirect(reply, state);
   }
+  recordUsage(data.usage, state);
 
   if (message?.tool_calls?.some((tc) => tc.function.name === "end_call")) {
     checkEndCall(state);
