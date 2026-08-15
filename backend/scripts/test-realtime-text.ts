@@ -15,6 +15,7 @@ import readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { getPersona, DEFAULT_PERSONA_ID } from "../src/personas";
 import { buildRealtimeInstructions } from "../src/realtimeInstructions";
+import { createTestState, checkRedirect, checkEndCall, printSummary } from "./checks";
 
 function parseArgs() {
   const args = new Map<string, string>();
@@ -46,11 +47,21 @@ async function main() {
 
   console.log(`--- 페르소나: ${persona.name} (${model}, text-only) ---`);
   console.log(`관심사: ${interests.join(", ") || "(없음)"} / 계획: ${plan || "(없음)"}`);
-  console.log("Ctrl+C로 종료.\n");
+  console.log("Ctrl+C로 종료 (종료 시 재정향/end_call 요약 출력).\n");
 
-  const rl = readline.createInterface({ input: stdin, output: stdout });
+  const state = createTestState(plan);
+  let currentText = "";
+
   const socket = new WebSocket(`wss://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`, {
     headers: { Authorization: `Bearer ${apiKey}` },
+  });
+
+  const rl = readline.createInterface({ input: stdin, output: stdout });
+  rl.on("SIGINT", () => {
+    printSummary(state);
+    rl.close();
+    socket.close();
+    process.exit(0);
   });
 
   socket.on("open", () => {
@@ -84,15 +95,22 @@ async function main() {
     switch (event.type) {
       case "response.output_text.delta":
         stdout.write(event.delta);
+        currentText += event.delta;
+        break;
+      case "response.output_text.done":
+        checkRedirect(currentText, state);
+        currentText = "";
         break;
       case "response.output_item.done": {
         const item = event.item;
         if (item?.type === "function_call" && item?.name === "end_call") {
-          console.log("\n[end_call 호출 감지 — 이 시점에 실제 통화라면 hangup() 실행됨]");
+          checkEndCall(state);
+          console.log("[이 시점에 실제 통화라면 hangup() 실행됨]");
         }
         break;
       }
       case "response.done": {
+        state.turn += 1;
         const userInput = await rl.question("\n나: ");
         socket.send(
           JSON.stringify({
@@ -120,6 +138,7 @@ async function main() {
 
   socket.on("close", (code, reason) => {
     console.log(`\n연결 종료 (${code}) ${reason?.toString() ?? ""}`);
+    printSummary(state);
     process.exit(0);
   });
 }
