@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { showCallNotification } from '../lib/notify'
-import { postJson } from '../lib/api'
 
 const LEFT_AT_KEY = 'was:leftAt'
 const NOTIFIED_KEY = 'was:leftNotified'
@@ -14,11 +13,13 @@ const POLL_MS = 20_000
  * 지금을 비교해서 임계값을 넘었으면 바로 전화 화면을 띄운다 — 페이지가
  * 다시 로드된 시점에 실행되는 코드라 백그라운드 실행 여부와 무관하게 항상 동작한다.
  *
- * best-effort 경로: 벗어나 있는 동안 주기적으로 서버에 실제 Push 발송을
- * 요청한다(/api/push/send, 실제 알림 표시는 sw.js의 push 이벤트에서 일어남).
- * 서버/네트워크 문제로 실패하면 로컬 알림(lib/notify.js)으로 폴백한다.
+ * best-effort 경로: 벗어나 있는 동안 주기적으로 로컬 알림(lib/notify.js,
+ * Notification API)을 직접 띄운다. 원래는 서버 실제 Web Push(/api/push/send)를
+ * 먼저 시도했지만, 현장 발표에서는 네트워크/푸시 배달 지연이 시연을 망칠 수
+ * 있어 그 경로를 걷어내고 브라우저 로컬 알림만 남겼다(발표팀 결정).
  * 다만 브라우저(특히 iOS)가 백그라운드 탭의 JS를 일찍 정지시킬 수 있어서
- * 이 알림이 항상 온다는 보장은 없다.
+ * 이 알림이 항상 온다는 보장은 없다 — 그래서 Home 화면 벨 아이콘으로 언제든
+ * 수동으로 같은 알림을 띄울 수 있게 해뒀다(App.jsx의 데모 트리거 참고).
  */
 export default function useAwayMonitor({ enabled, limitMinutes, personaName, onThresholdReached }) {
   const [awaySeconds, setAwaySeconds] = useState(0)
@@ -45,8 +46,7 @@ export default function useAwayMonitor({ enabled, limitMinutes, personaName, onT
         if (!leftAt) return
         const elapsed = Date.now() - leftAt
         if (elapsed >= thresholdMs && !localStorage.getItem(NOTIFIED_KEY)) {
-          const pushed = await postJson('/api/push/send', {})
-          const sent = pushed?.ok || (await showCallNotification(personaName))
+          const sent = await showCallNotification(personaName)
           if (sent) localStorage.setItem(NOTIFIED_KEY, '1')
         }
       }, POLL_MS)

@@ -13,6 +13,7 @@ import { getPersona, DEFAULT_PERSONA_ID } from './personas'
 import { loadState, saveState } from './lib/storage'
 import { saveProfile } from './lib/api'
 import { prefetchCallSession } from './lib/callSession'
+import { showCallNotification } from './lib/notify'
 import useAwayMonitor from './hooks/useAwayMonitor'
 
 const initial = loadState()
@@ -184,6 +185,10 @@ export default function App() {
           awaySeconds={awaySeconds}
           onManageApps={() => setScreen('appManage')}
           onManageRoutines={() => setScreen('routines')}
+          // 발표 데모용 — 실제 away 타이머/서버 push를 기다리지 않고 벨 아이콘
+          // 탭 한 번으로 통화 알림 배너를 바로 보여준다(팀 결정: 현장에선 실제
+          // 푸시 배달을 신뢰할 수 없어 데모는 이 로컬 알림 경로로만 시연).
+          onDemoNotification={() => showCallNotification(persona.name)}
           {...tabProps}
         />
       )}

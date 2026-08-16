@@ -20,6 +20,7 @@ export default function Home({
   onNavigate,
   onManageApps,
   onManageRoutines,
+  onDemoNotification,
 }) {
   const [showAwayNotice, setShowAwayNotice] = useState(false)
 
@@ -37,10 +38,17 @@ export default function Home({
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
+          <button
+            type="button"
+            onClick={onDemoNotification}
+            aria-label="알림 미리보기 (데모)"
+            className="active:opacity-70"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </button>
         </div>
 
         {showAwayNotice && (
