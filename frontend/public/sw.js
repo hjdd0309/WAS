@@ -24,7 +24,7 @@ self.addEventListener('push', (event) => {
     // 페이로드가 없거나 JSON이 아니면 기본값으로 대체
   }
 
-  const title = payload.title || '잠깐만'
+  const title = payload.title || '위스피'
   const body = payload.body || '전화하고 있어요 📞'
 
   event.waitUntil(

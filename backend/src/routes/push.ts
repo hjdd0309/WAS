@@ -61,7 +61,7 @@ pushRouter.post("/push/send", async (req, res) => {
   }
 
   const persona = getPersona(profile.personaId);
-  const body = profile.pendingNotificationText || `${persona.name}이(가) 전화하고 있어요 📞`;
+  const body = profile.pendingNotificationText || "전화하고 있어요 📞";
 
   try {
     await webpush.sendNotification(
