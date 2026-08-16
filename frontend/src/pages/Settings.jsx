@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import BottomNav from '../components/BottomNav'
 import ScreenHeader from '../components/ScreenHeader'
+import HomeScreenInstallCard from '../components/HomeScreenInstallCard'
+import NotificationPermissionCard from '../components/NotificationPermissionCard'
 
 function Toggle({ checked, onChange }) {
   return (
@@ -44,7 +46,6 @@ function Row({ label, right, onClick }) {
 }
 
 export default function Settings({ monitoredApps, onManageApps, onNavigate, onCallPress }) {
-  const [notif, setNotif] = useState(true)
   const [sound, setSound] = useState(true)
 
   return (
@@ -67,8 +68,12 @@ export default function Settings({ monitoredApps, onManageApps, onNavigate, onCa
           <Chevron />
         </button>
 
+        <div className="mt-4 flex flex-col gap-3">
+          <HomeScreenInstallCard />
+          <NotificationPermissionCard />
+        </div>
+
         <div className="mt-4 divide-y divide-white/10 overflow-hidden rounded-[20px] border border-[#695b69]/60 bg-[#1d191d]">
-          <Row label="알림" right={<Toggle checked={notif} onChange={setNotif} />} />
           <Row label="사운드" right={<Toggle checked={sound} onChange={setSound} />} />
           <Row label="다크 모드" right={<span className="text-[12px] text-[#919191]">항상 켜짐</span>} />
         </div>
