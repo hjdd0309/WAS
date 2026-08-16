@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 function CallGateIcon() {
   return (
@@ -8,17 +8,79 @@ function CallGateIcon() {
   )
 }
 
-// 실제 드래그 제스처 대신, 탭하면 썸을 오른쪽 끝까지 CSS 전환으로 밀어 보여준 뒤
-// connect()를 호출한다 — 애니메이션이 끝나기 전에 화면이 바뀌지 않도록 지연을 둔다.
-const SLIDE_ANIMATION_MS = 260
+const THUMB_SIZE = 52
+const INSET = 6
+// 트랙 이동 가능 거리의 이 비율 이상 밀면 "완료"로 간주해 끝까지 스냅시킨다.
+const COMPLETE_RATIO = 0.7
+const SNAP_MS = 200
 
+// 실제 손가락/커서를 따라 썸이 움직이는 드래그 제스처. 놓았을 때 충분히
+// 밀었으면(COMPLETE_RATIO) 끝까지 스냅 애니메이션 후 connect()를 호출하고,
+// 아니면 원위치로 되돌아간다.
 export default function CallGate({ persona, onSlide }) {
-  const [sliding, setSliding] = useState(false)
+  const trackRef = useRef(null)
+  const dragRef = useRef(null) // { startClientX, startLeft, maxLeft }
+  // 연속된 포인터 이벤트가 리렌더 사이 빠르게 몰아쳐 들어올 때(빠른 스와이프,
+  // 자동화 도구의 합성 이벤트 등) React state 클로저가 아직 이전 값을 들고
+  // 있을 수 있다. 판정에 쓰는 값은 항상 ref로 동기적으로 최신값을 읽고,
+  // state(left/dragging)는 화면 표시 용도로만 쓴다.
+  const leftRef = useRef(INSET)
+  const draggingRef = useRef(false)
+  const completedRef = useRef(false)
+  const [left, setLeft] = useState(INSET)
+  const [dragging, setDragging] = useState(false)
 
-  const handleTap = () => {
-    if (sliding) return
-    setSliding(true)
-    setTimeout(onSlide, SLIDE_ANIMATION_MS)
+  const updateLeft = (next) => {
+    leftRef.current = next
+    setLeft(next)
+  }
+
+  const handlePointerDown = (e) => {
+    if (completedRef.current) return
+    const track = trackRef.current
+    if (!track) return
+    const rect = track.getBoundingClientRect()
+    const maxLeft = rect.width - THUMB_SIZE - INSET
+    dragRef.current = { startClientX: e.clientX, startLeft: leftRef.current, maxLeft }
+    draggingRef.current = true
+    setDragging(true)
+    track.setPointerCapture(e.pointerId)
+  }
+
+  const handlePointerMove = (e) => {
+    if (!draggingRef.current || !dragRef.current) return
+    const { startClientX, startLeft, maxLeft } = dragRef.current
+    const next = Math.min(maxLeft, Math.max(INSET, startLeft + (e.clientX - startClientX)))
+    updateLeft(next)
+  }
+
+  const finishDrag = () => {
+    if (!draggingRef.current || !dragRef.current) return
+    const { maxLeft } = dragRef.current
+    const progress = maxLeft > INSET ? (leftRef.current - INSET) / (maxLeft - INSET) : 0
+    draggingRef.current = false
+    setDragging(false)
+    dragRef.current = null
+
+    if (progress >= COMPLETE_RATIO) {
+      updateLeft(maxLeft)
+      completedRef.current = true
+      setTimeout(onSlide, SNAP_MS)
+    } else {
+      updateLeft(INSET)
+    }
+  }
+
+  const handleKeyDown = (e) => {
+    if (completedRef.current) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      const track = trackRef.current
+      const maxLeft = track ? track.getBoundingClientRect().width - THUMB_SIZE - INSET : leftRef.current
+      updateLeft(maxLeft)
+      completedRef.current = true
+      setTimeout(onSlide, SNAP_MS)
+    }
   }
 
   return (
@@ -33,23 +95,30 @@ export default function CallGate({ persona, onSlide }) {
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={handleTap}
+      <div
+        ref={trackRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishDrag}
+        onPointerCancel={finishDrag}
+        onKeyDown={handleKeyDown}
+        role="button"
+        tabIndex={0}
         aria-label="밀어서 대화하기"
-        className="relative h-[64px] w-full max-w-[360px] overflow-hidden rounded-full bg-[#d9d9d9]/30"
+        className="relative h-[64px] w-full max-w-[360px] touch-none select-none overflow-hidden rounded-full bg-[#d9d9d9]/30"
       >
-        <span className="absolute inset-0 flex items-center justify-center text-[17px] text-white">
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[17px] text-white">
           밀어서 대화하기
         </span>
         <span
-          className={`absolute top-1/2 flex size-[52px] -translate-y-1/2 items-center justify-center rounded-full bg-accent transition-[left] duration-300 ease-out ${
-            sliding ? 'left-[calc(100%-58px)]' : 'left-[6px]'
+          style={{ left }}
+          className={`absolute top-1/2 flex size-[52px] -translate-y-1/2 items-center justify-center rounded-full bg-accent ${
+            dragging ? '' : 'transition-[left] duration-200 ease-out'
           }`}
         >
           <CallGateIcon />
         </span>
-      </button>
+      </div>
     </div>
   )
 }
