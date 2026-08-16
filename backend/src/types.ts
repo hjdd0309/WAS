@@ -1,10 +1,4 @@
-export type PersonaId =
-  | "mom"
-  | "collegeFriend"
-  | "grandma"
-  | "churchBro"
-  | "trainer"
-  | "tsundereBro";
+export type PersonaId = "whispy";
 
 export interface OnboardingData {
   interests: string[];
