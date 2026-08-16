@@ -1,8 +1,5 @@
-import { PERSONAS } from '../personas'
-
-// 대화 시간 + AI 통화 상대(페르소나) 선택 UI. 온보딩 5단계와 앱별 관리
-// 화면(AppManage)이 이 조각을 공유한다.
-export default function PersonaLimitEditor({ limitMinutes, onChangeLimit, personaId, onSelectPersona }) {
+// 대화 시간 설정 UI. 온보딩 5단계와 앱별 관리 화면(AppManage)이 이 조각을 공유한다.
+export default function PersonaLimitEditor({ limitMinutes, onChangeLimit }) {
   const adjustLimit = (delta) => onChangeLimit(Math.min(120, Math.max(5, limitMinutes + delta)))
 
   return (
@@ -25,25 +22,6 @@ export default function PersonaLimitEditor({ limitMinutes, onChangeLimit, person
           >
             +
           </button>
-        </div>
-      </div>
-
-      <div>
-        <p className="mb-3 text-[15px] font-semibold text-white">어떻게 불러드릴까요?</p>
-        <div className="grid grid-cols-2 gap-2">
-          {PERSONAS.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => onSelectPersona(p.id)}
-              className={`flex h-[33px] items-center justify-center rounded-[20px] border text-[12px] font-medium transition-colors active:opacity-70 ${
-                personaId === p.id
-                  ? 'border-accent bg-accent text-black'
-                  : 'border-accent/40 bg-[#241e28] text-white'
-              }`}
-            >
-              {p.emoji} {p.name}
-            </button>
-          ))}
         </div>
       </div>
     </div>

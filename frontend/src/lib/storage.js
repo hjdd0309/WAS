@@ -34,7 +34,7 @@ const DEFAULT_CALL_LOG = [
   {
     id: 'seed1',
     timestamp: seedNow - DAY_MS - 3 * 60 * 60 * 1000,
-    personaId: 'tsundereBro',
+    personaId: 'whispy',
     appId: 'kakaotalk',
     durationSeconds: 29,
     quote: '까칠하게 굴길래 저도 모르게 웃음이 났어요',
@@ -42,7 +42,7 @@ const DEFAULT_CALL_LOG = [
   {
     id: 'seed2',
     timestamp: seedNow - DAY_MS - 8 * 60 * 60 * 1000,
-    personaId: 'trainer',
+    personaId: 'whispy',
     appId: 'youtube',
     durationSeconds: 51,
     quote: '오늘 운동 언제 갈 거냐고 다그쳤어요',
