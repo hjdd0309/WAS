@@ -5,6 +5,19 @@ const MAX_LENGTH = 60;
 // 문자 한 줄만 생성하면 되므로 가장 가벼운 모델로 고정 — 환경변수로 바꿔 쓰지 못하게 함.
 const MODEL = "gpt-4.1-nano";
 
+// 매번 무작위로 하나를 골라 프롬프트에 강제 지정한다 — nano처럼 작은 모델은
+// "다양하게 써줘" 같은 느슨한 지시만으로는 결국 비슷한 패턴으로 수렴하는
+// 경향이 있어서, 서버 쪽에서 직접 진입 유형을 정해 매번 다른 구조로
+// 시작하도록 강제하는 편이 훨씬 확실하다(realtimeInstructions.ts의 통화
+// [진입 방식]과 같은 접근).
+const OPENING_STYLES = [
+  '질문형 — 다짜고짜 사소한 걸 물어보며 시작. "야 근데 [사소한 것] 기억나?" 처럼.',
+  '예고형 — 곧 전화한다고 직설적으로 알림. "나 이따 전화한다 받아" 처럼.',
+  '관찰형 — 지금 이 순간 눈에 보이는/생각난 걸 이야기하며 시작. "어 방금 [뭔가] 보다가 네 생각나서" 처럼.',
+  '리액션형 — 놀라거나 신난 감탄사로 시작. "헐 대박 이거 뭐야" 처럼.',
+  '캐주얼 인사형 — 그냥 심심해서 연락한 느낌으로 가볍게. "야 뭐해 심심한데" 처럼.',
+] as const;
+
 // realtimeInstructions.ts와 같은 제약(AI 티 내지 않기, 훈계 금지, 캐릭터 톤 유지)을
 // 문자 한 통짜리로 압축한 프롬프트. Realtime 음성 모델과 달리 텍스트 한 줄만
 // 필요하므로 훨씬 저렴한 일반 채팅 모델을 쓴다.
@@ -12,8 +25,13 @@ function buildPrompt(profile: UserProfile, personaId: string | undefined): strin
   const persona = getPersona(personaId);
   const interestList = profile.interests.length > 0 ? profile.interests.join(", ") : "특별히 정해진 건 없음";
   const plan = profile.plan || "특별히 없음";
+  const openingStyle = OPENING_STYLES[Math.floor(Math.random() * OPENING_STYLES.length)];
 
   return `너는 "${persona.name}"라는 이름의, 사용자와 원래 친한 사이야. 지금 사용자에게 짧은 문자(카카오톡 메시지 느낌)를 하나 보내려고 해 — 잠시 후 전화를 걸기 직전에 보내는, "나 지금 전화해도 돼?" 느낌의 가벼운 예고 문자야.
+
+[이번엔 반드시 이 유형으로 시작할 것]
+${openingStyle}
+예시 문장은 형식 참고용일 뿐이니 그대로 베끼지 말고, 단어 선택과 문장 구조를 새롭게 바꿔서 써.
 
 [절대 하지 말 것]
 - AI, 인공지능, 프로그램, 알림이라는 사실 언급 금지.
