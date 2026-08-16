@@ -43,8 +43,8 @@ export default function CallGate({ persona, onSlide }) {
           밀어서 대화하기
         </span>
         <span
-          className={`absolute top-1/2 flex size-[52px] -translate-y-1/2 items-center justify-center rounded-full bg-accent transition-[left,right] duration-300 ease-out ${
-            sliding ? 'left-auto right-[6px]' : 'left-[6px]'
+          className={`absolute top-1/2 flex size-[52px] -translate-y-1/2 items-center justify-center rounded-full bg-accent transition-[left] duration-300 ease-out ${
+            sliding ? 'left-[calc(100%-58px)]' : 'left-[6px]'
           }`}
         >
           <CallGateIcon />
