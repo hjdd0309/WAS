@@ -1,14 +1,14 @@
 // 서버 Push(lib/push.js + /api/push/send)가 기본 경로다 — 이건 그게 실패했을 때만
 // (오프라인, VAPID 미설정, 구독 실패 등) 쓰는 로컬 알림 폴백이다. 페이지 JS가
 // 완전히 정지된 뒤에는(특히 iOS 백그라운드) 이 호출 자체가 실행되지 않을 수 있다.
-export async function showCallNotification(personaName) {
+export async function showCallNotification(personaName, body) {
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return false
   if (!('serviceWorker' in navigator)) return false
 
   try {
     const registration = await navigator.serviceWorker.ready
     await registration.showNotification(personaName, {
-      body: '전화하고 있어요 📞 탭하면 바로 받을 수 있어요',
+      body: body || '전화하고 있어요 📞 탭하면 바로 받을 수 있어요',
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
       tag: 'was-call',

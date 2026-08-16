@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { showCallNotification } from '../lib/notify'
+import { fetchNotificationPreviewText } from '../lib/push'
 
 const LEFT_AT_KEY = 'was:leftAt'
 const NOTIFIED_KEY = 'was:leftNotified'
@@ -46,7 +47,8 @@ export default function useAwayMonitor({ enabled, limitMinutes, personaName, onT
         if (!leftAt) return
         const elapsed = Date.now() - leftAt
         if (elapsed >= thresholdMs && !localStorage.getItem(NOTIFIED_KEY)) {
-          const sent = await showCallNotification(personaName)
+          const text = await fetchNotificationPreviewText()
+          const sent = await showCallNotification(personaName, text)
           if (sent) localStorage.setItem(NOTIFIED_KEY, '1')
         }
       }, POLL_MS)

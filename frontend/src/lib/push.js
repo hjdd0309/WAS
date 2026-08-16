@@ -1,4 +1,4 @@
-import { postJson } from './api'
+import { postJson, getJson } from './api'
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || ''
 
@@ -32,4 +32,11 @@ export async function subscribeToPush() {
     console.error('푸시 구독 실패', err)
     return false
   }
+}
+
+// 알림 문구를 매번 nano 모델로 새로 생성해서 받아온다(고정 문구 반복 방지).
+// 실패하면 null — 호출부는 notify.js의 기본 문구로 폴백한다.
+export async function fetchNotificationPreviewText() {
+  const result = await getJson('/api/push/preview-text')
+  return result?.text || null
 }

@@ -14,6 +14,7 @@ import { loadState, saveState } from './lib/storage'
 import { saveProfile } from './lib/api'
 import { prefetchCallSession } from './lib/callSession'
 import { showCallNotification } from './lib/notify'
+import { fetchNotificationPreviewText } from './lib/push'
 import useAwayMonitor from './hooks/useAwayMonitor'
 
 const initial = loadState()
@@ -196,7 +197,8 @@ export default function App() {
             if (Notification.permission === 'default') {
               await Notification.requestPermission()
             }
-            showCallNotification(persona.name)
+            const text = await fetchNotificationPreviewText()
+            showCallNotification(persona.name, text)
           }}
           {...tabProps}
         />
