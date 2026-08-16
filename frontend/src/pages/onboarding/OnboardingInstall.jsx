@@ -22,12 +22,12 @@ export default function OnboardingInstall({ onBack, onNext }) {
   return (
     <div className="flex h-full flex-col px-6 pb-8 pt-6">
       <h1 className="text-[26px] font-semibold leading-[1.35] text-white">
-        전화 알림을 받으려면
+        위스피의 전화를
         <br />
-        <span className="text-accent">설정이 필요해요</span>
+        <span className="text-accent">진짜처럼 받고 싶다면</span>
       </h1>
       <p className="mt-2 text-[15px] leading-[1.6] text-[#919191]">
-        앱을 벗어나 있을 때도 위스피가 전화를 걸 수 있게, 딱 두 가지만 해주세요
+        홈 화면에 설치해야 위스피의 전화 알림을 깔끔하게 받을 수 있어요. 꼭 해주세요!
       </p>
 
       <div className="no-scrollbar mt-6 min-h-0 flex-1 overflow-y-auto">
@@ -35,11 +35,11 @@ export default function OnboardingInstall({ onBack, onNext }) {
           <HomeScreenInstallCard title="① 홈 화면에 추가" />
           <NotificationPermissionCard title="② 알림 허용" />
 
-          {ios && !standalone && (
-            <p className="px-1 text-[12px] leading-[1.6] text-white/40">
-              iOS는 홈 화면에 추가하지 않으면 알림을 받을 수 없어요. ①을 먼저 해주세요.
-            </p>
-          )}
+          <p className="px-1 text-[12px] leading-[1.6] text-white/40">
+            {ios && !standalone
+              ? 'iOS는 홈 화면에 추가하지 않으면 알림을 받을 수 없어요. ①을 먼저 해주세요.'
+              : '①을 건너뛰면 알림이 브라우저 탭에 묻히거나 아이콘이 다르게 보일 수 있어요. 설치를 강력 추천해요.'}
+          </p>
         </div>
       </div>
 
