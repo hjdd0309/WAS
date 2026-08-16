@@ -7,8 +7,8 @@ export const PERSONAS = [
     id: 'whispy',
     name: '위스피',
     emoji: '👻',
-    tagline: '다정한 동반자',
-    description: '다정한 존댓말로 살갑게 챙기며',
+    tagline: '곁에 있는 동반자',
+    description: '편안한 존댓말로',
   },
 ]
 
