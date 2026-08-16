@@ -1,8 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { API_BASE } from '../lib/api'
-import { getUserId } from '../lib/storage'
-
-const APP_SECRET = import.meta.env.VITE_APP_SHARED_SECRET || ''
+import { fetchCallSession, takePrefetchedSession } from '../lib/callSession'
 
 // 매 응답 직전에 톤을 다시 상기시켜, 대화가 길어질수록 모델이 시스템
 // instructions을 덜 따르는 문제를 보완한다.
@@ -14,6 +11,25 @@ const TONE_REMINDER =
 // 이건 볼륨 슬라이더가 아니라 고정 완화값이라, "미디어 볼륨"이 아닌 다른
 // 오디오 스트림으로 라우팅되는 문제 자체를 고치진 못한다(아래 pc.ontrack 주석 참고).
 const DEFAULT_PLAYBACK_VOLUME = 0.4
+
+async function readClientSecret(res) {
+  if (res.status === 429) throw new Error('busy')
+  if (!res.ok) throw new Error('session')
+  const data = await res.json().catch(() => null)
+  if (!data?.client_secret) throw new Error('session')
+  return data.client_secret
+}
+
+function postSdpOffer(clientSecret, sdp) {
+  return fetch('https://api.openai.com/v1/realtime/calls', {
+    method: 'POST',
+    body: sdp,
+    headers: {
+      Authorization: `Bearer ${clientSecret}`,
+      'Content-Type': 'application/sdp',
+    },
+  })
+}
 
 const ERROR_MESSAGES = {
   network: '통화 서버에 연결할 수 없어요. 네트워크를 확인해주세요.',
@@ -268,40 +284,36 @@ export default function useRealtimeCall() {
       setErrorMessage('')
 
       try {
-        const headers = { 'Content-Type': 'application/json', 'x-user-id': getUserId() }
-        if (APP_SECRET) headers['x-app-secret'] = APP_SECRET
-
-        let sessionRes
-        try {
-          sessionRes = await fetch(`${API_BASE}/api/call`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              interests: onboarding.interests ?? [],
-              plan: onboarding.plan ?? '',
-              personaId: onboarding.personaId,
-              previousSummary: onboarding.previousSummary || undefined,
-            }),
-          })
-        } catch {
-          throw new Error('network')
+        const payload = {
+          interests: onboarding.interests ?? [],
+          plan: onboarding.plan ?? '',
+          personaId: onboarding.personaId,
+          previousSummary: onboarding.previousSummary || undefined,
         }
 
-        if (sessionRes.status === 429) throw new Error('busy')
-        if (!sessionRes.ok) throw new Error('session')
+        // 홈 화면에 머무는 동안 미리 받아둔 세션이 있으면 그걸 쓰고,
+        // 없으면 지금 발급받는다 — 어느 쪽이든 마이크 캡처와 동시에 진행해
+        // (둘은 서로 결과가 필요 없는 독립적인 작업이라) 순서대로 기다리며
+        // 낭비하던 시간을 없앤다.
+        const prefetched = takePrefetchedSession(payload)
+        const sessionPromise = prefetched
+          ? Promise.resolve(prefetched.clientSecret)
+          : fetchCallSession(payload)
+              .catch(() => {
+                throw new Error('network')
+              })
+              .then(readClientSecret)
 
-        const data = await sessionRes.json().catch(() => null)
-        const clientSecret = data?.client_secret
-        if (!clientSecret) throw new Error('session')
-
-        let micStream
-        try {
-          micStream = await navigator.mediaDevices.getUserMedia({
+        const micPromise = navigator.mediaDevices
+          .getUserMedia({
             audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
           })
-        } catch {
-          throw new Error('mic')
-        }
+          .catch(() => {
+            throw new Error('mic')
+          })
+
+        const [initialClientSecret, micStream] = await Promise.all([sessionPromise, micPromise])
+        let clientSecret = initialClientSecret
         micStreamRef.current = micStream
 
         const pc = new RTCPeerConnection()
@@ -349,19 +361,23 @@ export default function useRealtimeCall() {
 
         let sdpRes
         try {
-          sdpRes = await fetch('https://api.openai.com/v1/realtime/calls', {
-            method: 'POST',
-            body: offer.sdp,
-            headers: {
-              Authorization: `Bearer ${clientSecret}`,
-              'Content-Type': 'application/sdp',
-            },
-          })
+          sdpRes = await postSdpOffer(clientSecret, offer.sdp)
         } catch {
-          throw new Error('webrtc')
+          sdpRes = null
         }
 
-        if (!sdpRes.ok) throw new Error('webrtc')
+        // 미리 받아둔 세션은 홈 화면에 오래 머문 사이 만료됐을 수 있다 —
+        // 그런 경우에 한해 새로 발급받아 한 번만 재시도한다.
+        if ((!sdpRes || !sdpRes.ok) && prefetched) {
+          try {
+            clientSecret = await fetchCallSession(payload).then(readClientSecret)
+            sdpRes = await postSdpOffer(clientSecret, offer.sdp)
+          } catch {
+            sdpRes = null
+          }
+        }
+
+        if (!sdpRes || !sdpRes.ok) throw new Error('webrtc')
 
         const answerSdp = await sdpRes.text()
         await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp })

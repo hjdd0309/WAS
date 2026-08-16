@@ -12,6 +12,7 @@ import { getApp } from './apps'
 import { getPersona, DEFAULT_PERSONA_ID } from './personas'
 import { loadState, saveState } from './lib/storage'
 import { saveProfile } from './lib/api'
+import { prefetchCallSession } from './lib/callSession'
 import useAwayMonitor from './hooks/useAwayMonitor'
 
 const initial = loadState()
@@ -68,6 +69,19 @@ export default function App() {
       routines: profile.routines,
     })
   }, [profile.onboarded, profile.interests, profile.plan, profile.routines, soonestApp?.personaId])
+
+  // 홈 화면에 머무는 동안 통화 세션을 미리 하나 받아둔다 — 실제로 전화
+  // 버튼을 누르는 순간 /api/call 왕복을 기다리지 않도록 하기 위함
+  // (useRealtimeCall.connect 참고). 관심사/계획/페르소나가 바뀌면 다시 받는다.
+  useEffect(() => {
+    if (screen !== 'home' || !soonestApp) return
+    prefetchCallSession({
+      interests: profile.interests,
+      plan: profile.plan,
+      personaId: persona.id,
+      previousSummary: profile.previousSummary,
+    })
+  }, [screen, profile.interests, profile.plan, profile.previousSummary, soonestApp, persona.id])
 
   const handleOnboardingComplete = (data) => {
     setProfile((prev) => ({

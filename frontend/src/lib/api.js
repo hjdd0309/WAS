@@ -5,7 +5,7 @@ import { getUserId } from './storage'
 export const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')
 const APP_SECRET = import.meta.env.VITE_APP_SHARED_SECRET || ''
 
-function baseHeaders() {
+export function baseHeaders() {
   const headers = { 'Content-Type': 'application/json', 'x-user-id': getUserId() }
   if (APP_SECRET) headers['x-app-secret'] = APP_SECRET
   return headers
