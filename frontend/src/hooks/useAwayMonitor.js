@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { showCallNotification } from '../lib/notify'
+import { postJson } from '../lib/api'
 
 const LEFT_AT_KEY = 'was:leftAt'
 const NOTIFIED_KEY = 'was:leftNotified'
@@ -13,7 +14,9 @@ const POLL_MS = 20_000
  * 지금을 비교해서 임계값을 넘었으면 바로 전화 화면을 띄운다 — 페이지가
  * 다시 로드된 시점에 실행되는 코드라 백그라운드 실행 여부와 무관하게 항상 동작한다.
  *
- * best-effort 경로: 벗어나 있는 동안 주기적으로 로컬 알림을 시도한다.
+ * best-effort 경로: 벗어나 있는 동안 주기적으로 서버에 실제 Push 발송을
+ * 요청한다(/api/push/send, 실제 알림 표시는 sw.js의 push 이벤트에서 일어남).
+ * 서버/네트워크 문제로 실패하면 로컬 알림(lib/notify.js)으로 폴백한다.
  * 다만 브라우저(특히 iOS)가 백그라운드 탭의 JS를 일찍 정지시킬 수 있어서
  * 이 알림이 항상 온다는 보장은 없다.
  */
@@ -42,7 +45,8 @@ export default function useAwayMonitor({ enabled, limitMinutes, personaName, onT
         if (!leftAt) return
         const elapsed = Date.now() - leftAt
         if (elapsed >= thresholdMs && !localStorage.getItem(NOTIFIED_KEY)) {
-          const sent = await showCallNotification(personaName)
+          const pushed = await postJson('/api/push/send', {})
+          const sent = pushed?.ok || (await showCallNotification(personaName))
           if (sent) localStorage.setItem(NOTIFIED_KEY, '1')
         }
       }, POLL_MS)

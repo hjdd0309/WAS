@@ -3,6 +3,7 @@ import ProgressDots from '../../components/ProgressDots'
 import OnboardingActions from '../../components/OnboardingActions'
 import useInstallPrompt from '../../hooks/useInstallPrompt'
 import { isAndroid, isIOS, isStandalone } from '../../lib/platform'
+import { subscribeToPush } from '../../lib/push'
 
 function getNotificationPermission() {
   if (typeof Notification === 'undefined') return 'unsupported'
@@ -26,6 +27,14 @@ export default function OnboardingInstall({ onBack, onNext }) {
     return () => mq.removeEventListener?.('change', handler)
   }, [])
 
+  useEffect(() => {
+    // 이전 방문에서 이미 알림 권한을 허용했다면(브라우저 권한은 유지되지만
+    // 서버 구독은 재시작 등으로 날아갔을 수 있음) 조용히 재구독을 시도한다.
+    // subscribeToPush는 기존 브라우저 구독을 재사용하므로 반복 호출해도 안전하다.
+    if (notifPermission === 'granted') subscribeToPush()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleInstallClick = async () => {
     const outcome = await promptInstall()
     if (outcome === 'accepted') setStandalone(isStandalone())
@@ -35,6 +44,7 @@ export default function OnboardingInstall({ onBack, onNext }) {
     if (typeof Notification === 'undefined') return
     const permission = await Notification.requestPermission()
     setNotifPermission(permission)
+    if (permission === 'granted') subscribeToPush()
   }
 
   return (

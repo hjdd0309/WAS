@@ -8,9 +8,27 @@
 
 **중요:** 실제 음성 스트림(WebRTC)은 브라우저 ↔ OpenAI가 직접 주고받습니다. 이 백엔드는 오디오를 중계하지 않고, 아래 한 가지만 담당합니다.
 
-- `POST /api/call` — OpenAI에 보낼 `client_secret`(임시 토큰)을 발급. `OPENAI_API_KEY`가 브라우저에 노출되지 않도록 서버에서만 다룸. 요청으로 받은 `interests`/`plan`/`personaId`를 반영해 페르소나별 voice/system instructions를 조립해서 세션 생성 시 함께 넘김. `plan`은 통화 마무리 단계에서 "저번에 하려던 거 어떻게 됐어?"처럼 자연스럽게 되짚어 몰입을 깨는 용도로 프롬프트에 들어감 — 훈계가 아니라 대화 흐름으로 유도하는 게 설계 의도.
+- `POST /api/call` — OpenAI에 보낼 `client_secret`(임시 토큰)을 발급. `OPENAI_API_KEY`가 브라우저에 노출되지 않도록 서버에서만 다룸. 요청으로 받은 `interests`/`plan`/`personaId`를 반영해 페르소나별 voice/system instructions를 조립해서 세션 생성 시 함께 넘김. `plan`은 통화 마무리 단계에서 "저번에 하려던 거 어떻게 됐어?"처럼 자연스럽게 되짚어 몰입을 깨는 용도로 프롬프트에 들어감 — 훈계가 아니라 대화 흐름으로 유도하는 게 설계 의도. 요청 body가 비어있는 필드는 `x-user-id` 헤더로 KV 프로필을 조회해 채운다(아래 "서버 메모리" 참고).
+- `POST /api/call/summary` — 통화 종료 후 프론트가 뽑아낸 짧은 요약(`deriveSummary`)을 `x-user-id`로 KV에 저장. 다음 통화의 `previousSummary`로 자동 반영됨.
+- `POST /api/profile`, `GET /api/profile` — `x-user-id`별 프로필(관심사/계획/페르소나/루틴) 저장·조회. 저장 시 다음 알림 문구를 비동기로 미리 생성해 캐싱한다(아래 참고).
+- `POST /api/push/subscribe`, `POST /api/push/send` — 실제 PWA Web Push 구독 등록/발송. 아래 "푸시 알림" 참고.
 
 ElevenLabs TTS 폴백(`/api/tts`)은 이번 스코프에서 제외 — OpenAI Realtime만 사용. 로직은 원래 프론트 레포의 `vite.config.ts` 미들웨어에 있던 것을 옮긴 것입니다 (`feature/persona-presets` 브랜치의 `src/personas.ts`, `src/realtimeInstructions.ts` 참고).
+
+## 서버 메모리 (userid 기반, 로그인 없음)
+
+로그인 없이 프론트가 `crypto.randomUUID()`로 만든 익명 ID를 `x-user-id` 헤더로 보낸다. `src/kv.ts`가 이 ID를 키로 `UserProfile`(관심사/계획/페르소나/루틴/이전 통화 요약/캐싱된 알림 문구/푸시 구독)을 Upstash Redis에 저장한다. `KV_REST_API_URL`/`KV_REST_API_TOKEN`(또는 `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`)이 없으면 in-memory `Map`으로 폴백해 로컬 개발은 그냥 되지만, **배포 전에는 반드시 Vercel 대시보드에서 Redis(Upstash) Marketplace 통합을 연결해야** 프로필이 재시작/인스턴스 간에 유지된다.
+
+## 푸시 알림 (실제 PWA Web Push)
+
+프론트(`frontend/public/sw.js`)에 이미 있던 로컬 알림 폴백 위에, 서버가 보내는 진짜 Web Push를 얹었다:
+
+1. 프론트가 알림 권한을 받으면 `PushManager`로 구독을 만들고 `/api/push/subscribe`로 등록.
+2. `/api/profile` 저장 시점마다 `src/notificationText.ts`가 저장된 프로필(관심사/계획/페르소나 톤)로 "친구가 보낸 것 같은" 짧은 문자 한 통을 미리 생성해 `pendingNotificationText`로 캐싱해둔다 — 발송 순간에 LLM 지연이 끼지 않게 하기 위함.
+3. 프론트(`useAwayMonitor`)가 임계값 도달을 감지하면 `/api/push/send`를 호출 → 캐싱된 문구를 `web-push`로 즉시 발송하고, 응답 후 다음 번을 위한 문구를 백그라운드로 재생성.
+4. `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`가 없으면 `/api/push/send`는 501을 반환하고, 프론트는 조용히 로컬 알림으로 폴백한다(오프라인/미배포 상황 대비).
+
+키는 `npx web-push generate-vapid-keys`(backend/ 안에서 `web-push` 의존성 설치 후)로 로컬 생성 — 외부 호출 없는 순수 연산. 프론트의 `VITE_VAPID_PUBLIC_KEY`에는 반드시 같은 공개키를 넣어야 한다.
 
 ## 아키텍처 결정 사항
 
@@ -21,7 +39,9 @@ ElevenLabs TTS 폴백(`/api/tts`)은 이번 스코프에서 제외 — OpenAI Re
 
 ## 환경 변수
 
-`backend/.env.example` 참고. `OPENAI_API_KEY`는 필수, 나머지(`FRONTEND_ORIGIN`, `APP_SHARED_SECRET` 등)는 배포 시 강력 권장.
+`backend/.env.example` 참고. `OPENAI_API_KEY`는 필수, 나머지(`FRONTEND_ORIGIN`, `APP_SHARED_SECRET`, `KV_REST_API_URL`/`TOKEN`, `VAPID_PUBLIC_KEY`/`PRIVATE_KEY` 등)는 배포 시 강력 권장 — 특히 KV/VAPID를 안 채우면 서버 메모리와 실제 푸시가 조용히 폴백 모드로 동작하니 배포 전 체크리스트에 넣을 것.
+
+로컬에서 `.env` 파일로 값을 주는 경우, `src/server.ts`가 반드시 `import "dotenv/config"`를 다른 어떤 import보다 먼저 두고 있어야 한다 — tsx가 이 파일을 ESM으로 평가하는데, ESM은 import된 모듈들을 먼저 전부 평가한 뒤에야 그 파일 자신의 코드(예: `dotenv.config()` 호출)를 실행하므로, `kv.ts`/`push.ts`처럼 모듈 최상단에서 `process.env`를 읽는 코드가 dotenv보다 먼저 실행돼 값을 못 보는 순서 버그가 생기기 쉽다.
 
 ## 보안
 
@@ -43,3 +63,5 @@ Vercel이 주는 공개 URL은 CORS로 못 막는 직접 호출(curl/봇)에 노
 응답: `{ client_secret: string, model: string }`
 
 이 필드명/응답 형태를 바꾸면 프론트 쪽 수정이 함께 필요하므로, 변경 전 반드시 확인할 것.
+
+`/api/profile`, `/api/call/summary`, `/api/push/*`는 전부 `x-user-id` 헤더가 필수다(없으면 400). `/api/call`은 이 헤더가 있으면 선택적으로 body를 KV 값으로 백필하지만, 헤더 자체는 필수가 아니다(기존 호환).
