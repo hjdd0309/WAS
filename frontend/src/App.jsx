@@ -188,7 +188,16 @@ export default function App() {
           // 발표 데모용 — 실제 away 타이머/서버 push를 기다리지 않고 벨 아이콘
           // 탭 한 번으로 통화 알림 배너를 바로 보여준다(팀 결정: 현장에선 실제
           // 푸시 배달을 신뢰할 수 없어 데모는 이 로컬 알림 경로로만 시연).
-          onDemoNotification={() => showCallNotification(persona.name)}
+          // 온보딩에서 알림 허용을 안 눌렀던 세션이면 permission이 'default'라
+          // showCallNotification이 조용히 실패하므로, 벨 클릭(=사용자 제스처)
+          // 시점에 권한이 없으면 여기서 바로 요청부터 한다.
+          onDemoNotification={async () => {
+            if (typeof Notification === 'undefined') return
+            if (Notification.permission === 'default') {
+              await Notification.requestPermission()
+            }
+            showCallNotification(persona.name)
+          }}
           {...tabProps}
         />
       )}
