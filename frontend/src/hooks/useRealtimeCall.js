@@ -63,6 +63,22 @@ export default function useRealtimeCall() {
   const currentAiIndexRef = useRef(null)
   const startedRef = useRef(false)
   const responseInFlightRef = useRef(false)
+  const micMutedByUserRef = useRef(false)
+  // 연결 직후 첫 인사(첫 response) 도중엔 마이크를 아예 죽여둔다. 원격 오디오
+  // 트랙이 막 붙은 시점엔 브라우저 에코 캔슬레이션이 그 트랙을 레퍼런스로
+  // 잡기 전이라, AI 목소리가 마이크로 살짝 새어 들어가 서버 VAD가 "사용자가
+  // 끼어들었다"고 오인 → interrupt_response:true로 응답을 취소 → 곧장 새
+  // response.create가 나가면서 "말하다 끊기고 다시 시작"하는 것처럼 들리는
+  // 문제가 있었다. 첫 응답이 끝날 때까지만 무음으로 보내 이 오탐을 원천 차단.
+  const isFirstResponseRef = useRef(true)
+  const micSuppressedForGreetingRef = useRef(true)
+
+  const syncMicTrackEnabled = useCallback(() => {
+    const enabled = !micMutedByUserRef.current && !micSuppressedForGreetingRef.current
+    micStreamRef.current?.getAudioTracks().forEach((track) => {
+      track.enabled = enabled
+    })
+  }, [])
 
   const handleEvent = useCallback((event) => {
     switch (event.type) {
@@ -84,6 +100,12 @@ export default function useRealtimeCall() {
           event.response?.id,
         )
         responseInFlightRef.current = false
+        if (isFirstResponseRef.current) {
+          // 첫 응답(인사)이 끝났으니 억지로 죽여뒀던 마이크를 정상 상태로 돌린다.
+          isFirstResponseRef.current = false
+          micSuppressedForGreetingRef.current = false
+          syncMicTrackEnabled()
+        }
         if (cancelled) {
           // 잘려나간 AI 말풍선을 그대로 두면 영영 done:false로 남으니 마무리 처리.
           setTranscript((prev) => {
@@ -161,7 +183,7 @@ export default function useRealtimeCall() {
       default:
         break
     }
-  }, [])
+  }, [syncMicTrackEnabled])
 
   const teardown = useCallback(() => {
     dcRef.current?.close()
@@ -306,6 +328,7 @@ export default function useRealtimeCall() {
         const [initialClientSecret, micStream] = await Promise.all([sessionPromise, micPromise])
         let clientSecret = initialClientSecret
         micStreamRef.current = micStream
+        syncMicTrackEnabled() // 첫 인사가 끝나기 전까진 무음으로 보냄
 
         const pc = new RTCPeerConnection()
         pcRef.current = pc
@@ -380,7 +403,7 @@ export default function useRealtimeCall() {
         setStatus('error')
       }
     },
-    [handleEvent, teardown, speakerBoost, applyAudioRoute],
+    [handleEvent, teardown, speakerBoost, applyAudioRoute, syncMicTrackEnabled],
   )
 
   const retry = useCallback(
@@ -388,18 +411,22 @@ export default function useRealtimeCall() {
       startedRef.current = false
       currentAiIndexRef.current = null
       responseInFlightRef.current = false
+      isFirstResponseRef.current = true
+      micSuppressedForGreetingRef.current = true
       setTranscript([])
       connect(onboarding)
     },
     [connect],
   )
 
-  const setMuted = useCallback((next) => {
-    setMutedState(next)
-    micStreamRef.current?.getAudioTracks().forEach((track) => {
-      track.enabled = !next
-    })
-  }, [])
+  const setMuted = useCallback(
+    (next) => {
+      setMutedState(next)
+      micMutedByUserRef.current = next
+      syncMicTrackEnabled()
+    },
+    [syncMicTrackEnabled],
+  )
 
   const setSpeakerBoost = useCallback(
     (next) => {
