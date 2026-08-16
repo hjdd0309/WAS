@@ -43,15 +43,23 @@ export default function HomeScreenInstallCard({ title = '홈 화면에 추가' }
       ) : android ? (
         <>
           <p className="mt-2 text-[13px] leading-[1.6] text-[#919191]">
-            버튼을 눌러 잠깐만을 앱처럼 설치할 수 있어요.
+            {canInstall
+              ? '버튼을 눌러 잠깐만을 앱처럼 설치할 수 있어요.'
+              : '이미 설치했다면 홈 화면의 잠깐만 아이콘으로 열어주세요. 아직이라면 잠시 후 이 버튼이 눌려요(브라우저가 준비 중).'}
           </p>
           <button
             onClick={handleInstallClick}
             disabled={!canInstall}
             className="mt-3 h-11 w-full rounded-[14px] bg-accent text-[14px] font-semibold text-black disabled:opacity-40"
           >
-            {canInstall ? '홈 화면에 추가하기' : '잠시 후 다시 시도해주세요'}
+            {canInstall ? '홈 화면에 추가하기' : '설치 준비 중 (또는 이미 설치됨)'}
           </button>
+          {!canInstall && (
+            <p className="mt-2 px-1 text-[11px] leading-[1.5] text-white/40">
+              지금 바로 다시 설치하고 싶다면, 브라우저 오른쪽 위 메뉴(⋮) → &lsquo;설치&rsquo; 또는
+              &lsquo;홈 화면에 추가&rsquo;에서 직접 할 수도 있어요.
+            </p>
+          )}
         </>
       ) : (
         <p className="mt-2 text-[13px] leading-[1.6] text-[#919191]">
