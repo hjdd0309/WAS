@@ -1,10 +1,10 @@
 export default function PhoneFrame({ children, onHomeGesture }) {
   return (
-    <div className="flex h-dvh w-full items-center justify-center overflow-hidden bg-black sm:p-6">
-      <div className="relative h-full w-full overflow-hidden bg-black sm:aspect-[390/844] sm:h-full sm:w-auto sm:max-h-[844px] sm:rounded-[40px] sm:border sm:border-white/10">
+    <div className="flex h-dvh w-full items-center justify-center overflow-hidden bg-[#1b171c] sm:p-6">
+      <div className="relative h-full w-full overflow-hidden bg-[#1b171c] sm:aspect-[390/844] sm:h-full sm:w-auto sm:max-h-[844px] sm:rounded-[40px] sm:border sm:border-white/10">
         {children}
 
-        <div className="pointer-events-none absolute left-1/2 top-2.5 z-50 hidden h-[26px] w-[100px] -translate-x-1/2 rounded-full bg-black sm:block" />
+        <div className="pointer-events-none absolute left-1/2 top-2.5 z-50 hidden h-[26px] w-[100px] -translate-x-1/2 rounded-full bg-[#1b171c] sm:block" />
 
         <button
           onClick={onHomeGesture}

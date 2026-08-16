@@ -42,7 +42,7 @@ export default function Onboarding({ onComplete }) {
     })
 
   return (
-    <div className="flex h-full w-full flex-col bg-black">
+    <div className="flex h-full w-full flex-col bg-[#1b171c]">
       <div className="min-h-0 flex-1 pt-6">
         {step === 0 && <OnboardingIntro onNext={next} />}
         {step === 1 && (

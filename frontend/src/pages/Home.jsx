@@ -31,7 +31,7 @@ export default function Home({
   }, [awaySeconds])
 
   return (
-    <div className="flex h-full w-full flex-col bg-black">
+    <div className="flex h-full w-full flex-col bg-[#1b171c]">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <div className="flex items-center justify-between">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
@@ -84,7 +84,7 @@ export default function Home({
             </div>
             <button
               aria-label="바로가기"
-              className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[#635281] bg-black active:opacity-70"
+              className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[#635281] bg-[#1b171c] active:opacity-70"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 18l6-6-6-6" />

@@ -11,7 +11,7 @@ export default function RoutineManage({ routines, onAdd, onRemove, onBack }) {
   }
 
   return (
-    <div className="flex h-full w-full flex-col bg-black">
+    <div className="flex h-full w-full flex-col bg-[#1b171c]">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <div className="flex items-center gap-3">
           <button

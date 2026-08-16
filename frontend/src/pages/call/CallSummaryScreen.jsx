@@ -9,7 +9,7 @@ const SUGGESTIONS = [
 
 export default function CallSummaryScreen({ app, persona, duration = 0, onHome }) {
   return (
-    <div className="flex h-full w-full flex-col bg-black px-6 pb-10 pt-14">
+    <div className="flex h-full w-full flex-col bg-[#1b171c] px-6 pb-10 pt-14">
       <div className="flex flex-1 flex-col items-center justify-between text-center">
         <div className="flex flex-col items-center gap-4">
           <div className="flex size-16 items-center justify-center rounded-full bg-accent/15">

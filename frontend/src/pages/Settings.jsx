@@ -48,7 +48,7 @@ export default function Settings({ monitoredApps, onManageApps, onNavigate, onCa
   const [sound, setSound] = useState(true)
 
   return (
-    <div className="flex h-full w-full flex-col bg-black">
+    <div className="flex h-full w-full flex-col bg-[#1b171c]">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <ScreenHeader title="설정" subtitle="잠깐만을 나에게 맞게 조정해요" />
 
