@@ -18,7 +18,8 @@ export async function createCallSession(
   body: Partial<OnboardingData>,
 ): Promise<CreateCallSessionResult | CreateCallSessionError> {
   const apiKey = process.env.OPENAI_API_KEY;
-  const model = process.env.REALTIME_MODEL || "gpt-realtime";
+  // 비용/속도 때문에 무조건 mini 고정 — 환경변수로 바꿔 쓰지 못하게 함.
+  const model = "gpt-realtime-mini";
 
   if (!apiKey) {
     return { ok: false, status: 501, message: "OPENAI_API_KEY not configured" };

@@ -2,7 +2,8 @@ import { getPersona } from "./personas";
 import type { UserProfile } from "./types";
 
 const MAX_LENGTH = 60;
-const DEFAULT_MODEL = "gpt-4o-mini";
+// 문자 한 줄만 생성하면 되므로 가장 가벼운 모델로 고정 — 환경변수로 바꿔 쓰지 못하게 함.
+const MODEL = "gpt-4.1-nano";
 
 // realtimeInstructions.ts와 같은 제약(AI 티 내지 않기, 훈계 금지, 캐릭터 톤 유지)을
 // 문자 한 통짜리로 압축한 프롬프트. Realtime 음성 모델과 달리 텍스트 한 줄만
@@ -43,7 +44,7 @@ export async function generateNotificationText(
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
-  const model = process.env.NOTIFICATION_TEXT_MODEL || DEFAULT_MODEL;
+  const model = MODEL;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6_000);
 
