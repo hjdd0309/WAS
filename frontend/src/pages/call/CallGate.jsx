@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 function CallGateIcon() {
   return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="#000" style={{ transform: 'rotate(-12deg)' }}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#000" style={{ transform: 'rotate(-12deg)' }}>
       <path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2Z" />
     </svg>
   )
@@ -37,14 +37,14 @@ export default function CallGate({ persona, onSlide }) {
         type="button"
         onClick={handleTap}
         aria-label="밀어서 대화하기"
-        className="relative h-[98px] w-full max-w-[360px] overflow-hidden rounded-full bg-[#d9d9d9]/30"
+        className="relative h-[64px] w-full max-w-[360px] overflow-hidden rounded-full bg-[#d9d9d9]/30"
       >
-        <span className="absolute inset-0 flex items-center justify-center text-[20px] text-white">
+        <span className="absolute inset-0 flex items-center justify-center text-[17px] text-white">
           밀어서 대화하기
         </span>
         <span
-          className={`absolute top-1/2 flex size-[94px] -translate-y-1/2 items-center justify-center rounded-full bg-accent transition-[left,right] duration-300 ease-out ${
-            sliding ? 'left-auto right-[2px]' : 'left-[2px]'
+          className={`absolute top-1/2 flex size-[52px] -translate-y-1/2 items-center justify-center rounded-full bg-accent transition-[left,right] duration-300 ease-out ${
+            sliding ? 'left-auto right-[6px]' : 'left-[6px]'
           }`}
         >
           <CallGateIcon />
