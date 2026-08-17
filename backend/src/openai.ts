@@ -28,11 +28,12 @@ export async function createCallSession(
   const interests = Array.isArray(body.interests) ? body.interests : [];
   const plan = typeof body.plan === "string" ? body.plan : "";
   const previousSummary = typeof body.previousSummary === "string" ? body.previousSummary : undefined;
+  const routines = Array.isArray(body.routines) ? body.routines : undefined;
   const persona = getPersona(body.personaId);
   const voice = persona.voice || process.env.REALTIME_VOICE || "verse";
 
   const instructions = buildRealtimeInstructions(
-    { interests, plan, personaId: persona.id, previousSummary },
+    { interests, plan, personaId: persona.id, previousSummary, routines },
     persona,
   );
 
