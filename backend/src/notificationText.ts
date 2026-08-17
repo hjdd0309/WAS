@@ -2,8 +2,11 @@ import { getPersona } from "./personas";
 import type { UserProfile } from "./types";
 
 const MAX_LENGTH = 60;
-// 문자 한 줄만 생성하면 되므로 가장 가벼운 모델로 고정 — 환경변수로 바꿔 쓰지 못하게 함.
-const MODEL = "gpt-4.1-nano";
+// 문자 한 줄만 생성하면 되므로 가벼운 모델로 고정 — 환경변수로 바꿔 쓰지 못하게 함.
+// gpt-4.1-nano는 조직 사용량 티어에서 모델별 하루 요청 한도(RPD)가 낮게
+// 걸려있어(50/day) 반복 테스트만으로 금방 소진됐다 — 더 널리 쓰이는
+// gpt-4o-mini로 바꿔 같은 티어에서도 훨씬 높은 기본 한도를 받는다.
+const MODEL = "gpt-4o-mini";
 
 // 매번 무작위로 하나를 골라 프롬프트에 강제 지정한다 — nano처럼 작은 모델은
 // "다양하게 써줘" 같은 느슨한 지시만으로는 결국 비슷한 패턴으로 수렴하는
