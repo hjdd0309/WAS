@@ -8,11 +8,12 @@ import OnboardingPersonalize from './OnboardingPersonalize'
 import OnboardingInstall from './OnboardingInstall'
 import OnboardingReady from './OnboardingReady'
 
-// 이미지가 있는 온보딩 단계마다 원본 크롭 비율(w/h)은 유지한 채, 세로 폭을
-// 250px로 통일해 단계를 넘길 때 마스코트 크기가 들쭉날쭉해 보이지 않게 한다.
-const STEP2_CROP = { containerW: 222, containerH: 250, w: '471.8%', h: '346.15%', left: '-127.21%', top: '-67.1%' }
-const STEP3_CROP = { containerW: 224, containerH: 310, w: '451.4%', h: '269.25%', left: '-339.74%', top: '-38.69%' }
-const STEP3_SLOT = { width: 240, height: 310 }
+// 컨테이너 크기를 onboarding-composite.png 안 해당 카드의 실제 픽셀 크기와 동일하게 맞춰서
+// (1:1 스케일) 카드가 잘리지 않고 원본 그대로 보이게 한다.
+const STEP2_CROP = { containerW: 261, containerH: 402, w: '529.12%', h: '283.33%', left: '-151.34%', top: '-57.46%' }
+const STEP2_SLOT = { width: 261, height: 402 }
+const STEP3_CROP = { containerW: 250, containerH: 400, w: '443.69%', h: '228.71%', left: '-331.44%', top: '-36.75%' }
+const STEP3_SLOT = { width: 250, height: 400 }
 
 export default function Onboarding({ onComplete }) {
   const [step, setStep] = useState(0)
@@ -48,6 +49,7 @@ export default function Onboarding({ onComplete }) {
         {step === 1 && (
           <OnboardingInfo
             crop={STEP2_CROP}
+            slotSize={STEP2_SLOT}
             heading="정한 시간을 넘으면"
             headingAccent="위스피가 당신에게 찾아가요"
             description={

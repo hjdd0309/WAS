@@ -1,4 +1,4 @@
-import onboardingComposite from '../../assets/illustrations/onboarding-composite.png'
+import onboardingImage12 from '../../assets/illustrations/onboarding1-image12.png'
 import ProgressDots from '../../components/ProgressDots'
 import OnboardingActions from '../../components/OnboardingActions'
 
@@ -8,14 +8,7 @@ export default function OnboardingIntro({ onNext }) {
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col items-center justify-center gap-7 overflow-y-auto text-center">
         <h1 className="text-[32px] font-semibold text-white">잠깐만요!</h1>
 
-        <div className="relative h-[250px] w-[226px] overflow-hidden rounded-[29px]">
-          <img
-            src={onboardingComposite}
-            alt="위스피 마스코트"
-            className="absolute max-w-none h-[409.83%] w-[550.49%]"
-            style={{ left: '-24.02%', top: '-89.87%' }}
-          />
-        </div>
+        <img src={onboardingImage12} alt="위스피 마스코트" className="w-full max-w-[226px]" />
 
         <p className="text-[17px] leading-[1.6] text-[#919191]">
           화면에 빠진 당신을

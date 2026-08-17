@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import BottomNav from '../components/BottomNav'
-import homeGreetingMascot from '../assets/illustrations/home-greeting-mascot.png'
+import homeGreetingMascot from '../assets/illustrations/ghost-image-1.png'
 import { getApp } from '../apps'
 import { getPersona } from '../personas'
 
@@ -67,13 +67,8 @@ export default function Home({
               저와 잠깐 <span className="text-accent">다른 얘기</span> 해볼까요?
             </p>
           </div>
-          <div className="animate-float relative h-[130px] w-[115px] shrink-0 overflow-hidden rounded-2xl">
-            <img
-              src={homeGreetingMascot}
-              alt="위스피 마스코트"
-              className="absolute max-w-none h-[547.18%] w-[286.24%]"
-              style={{ left: '-144.30%', top: '-64.43%' }}
-            />
+          <div className="animate-float ml-3 flex h-[130px] w-[115px] shrink-0 items-center justify-center">
+            <img src={homeGreetingMascot} alt="위스피 마스코트" className="h-auto w-full" />
           </div>
         </div>
 
