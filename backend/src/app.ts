@@ -40,11 +40,12 @@ export function createApp() {
     legacyHeaders: false,
   });
 
-  // 프로필 저장은 OpenAI 비용과 무관하고(설정 화면에서 자주 호출될 수 있음),
-  // call과 같은 엄격한 리밋을 걸면 정상 사용도 막힐 수 있어 별도로 완화해서 둔다.
+  // 프로필 저장/알림 문구 미리보기는 OpenAI 비용이 거의 없는 nano 모델 호출이라
+  // (설정 화면 저장, 알림 문구 데모 버튼 등에서 자주 호출될 수 있음), call과 같은
+  // 엄격한 리밋을 걸면 정상 사용/시연도 막힐 수 있어 훨씬 널널하게 둔다.
   const profileLimiter = rateLimit({
     windowMs: 60_000,
-    limit: 60,
+    limit: 300,
     standardHeaders: true,
     legacyHeaders: false,
   });
