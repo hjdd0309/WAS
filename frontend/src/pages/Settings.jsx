@@ -45,7 +45,7 @@ function Row({ label, right, onClick }) {
   )
 }
 
-export default function Settings({ monitoredApps, onManageApps, onNavigate, onCallPress }) {
+export default function Settings({ monitoredApps, interests, plan, onManageApps, onEditProfile, onNavigate, onCallPress }) {
   const [sound, setSound] = useState(true)
 
   return (
@@ -63,6 +63,21 @@ export default function Settings({ monitoredApps, onManageApps, onNavigate, onCa
               {monitoredApps.length === 0
                 ? '아직 등록한 앱이 없어요'
                 : `${monitoredApps.length}개 앱 모니터링 중`}
+            </p>
+          </div>
+          <Chevron />
+        </button>
+
+        <button
+          onClick={onEditProfile}
+          className="mt-3 flex w-full items-center justify-between rounded-[20px] border border-[#695b69]/60 bg-[#1d191d] p-5 text-left active:opacity-70"
+        >
+          <div>
+            <p className="text-[14px] font-semibold text-white">관심사·계획 수정</p>
+            <p className="mt-1 truncate text-[12px] text-[#919191]">
+              {interests.length === 0 && !plan
+                ? '아직 입력한 내용이 없어요'
+                : [interests.join(', '), plan].filter(Boolean).join(' · ')}
             </p>
           </div>
           <Chevron />

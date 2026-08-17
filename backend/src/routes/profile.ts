@@ -2,21 +2,18 @@ import { Router } from "express";
 import { getProfile, saveProfile } from "../kv";
 import { generateNotificationText } from "../notificationText";
 import { PERSONAS } from "../personas";
-import type { PersonaId, Routine } from "../types";
+import type { PersonaId } from "../types";
 
 export const profileRouter = Router();
 
 const MAX_INTERESTS = 10;
 const MAX_INTEREST_LENGTH = 30;
 const MAX_PLAN_LENGTH = 200;
-const MAX_ROUTINES = 20;
-const MAX_ROUTINE_LABEL_LENGTH = 20;
 
 interface ValidBody {
   interests?: string[];
   plan?: string;
   personaId?: PersonaId;
-  routines?: Routine[];
 }
 
 function validateBody(body: unknown): { error: string } | ValidBody {
@@ -49,25 +46,6 @@ function validateBody(body: unknown): { error: string } | ValidBody {
       return { error: "invalid personaId" };
     }
     result.personaId = b.personaId as PersonaId;
-  }
-
-  if (b.routines !== undefined) {
-    if (!Array.isArray(b.routines) || b.routines.length > MAX_ROUTINES) {
-      return { error: `routines must be an array of at most ${MAX_ROUTINES} items` };
-    }
-    const routines: Routine[] = [];
-    for (const item of b.routines) {
-      const r = item as Record<string, unknown>;
-      if (
-        typeof r.id !== "string" ||
-        typeof r.label !== "string" ||
-        r.label.length > MAX_ROUTINE_LABEL_LENGTH
-      ) {
-        return { error: `each routine needs id and label (label up to ${MAX_ROUTINE_LABEL_LENGTH} chars)` };
-      }
-      routines.push({ id: r.id, label: r.label });
-    }
-    result.routines = routines;
   }
 
   return result;

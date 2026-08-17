@@ -14,12 +14,12 @@ function formatAway(seconds) {
 export default function Home({
   app,
   monitoredApps,
-  routines,
+  plan,
   awaySeconds = 0,
   onCallPress,
   onNavigate,
   onManageApps,
-  onManageRoutines,
+  onEditProfile,
   onDemoNotification,
 }) {
   const [showAwayNotice, setShowAwayNotice] = useState(false)
@@ -147,34 +147,26 @@ export default function Home({
           <div className="my-4 h-px bg-white/10" />
 
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold text-white">내 루틴 리스트</p>
+            <p className="text-[11px] font-semibold text-white">할 일</p>
             <button
-              onClick={onManageRoutines}
+              onClick={onEditProfile}
               className="text-[11px] font-medium text-accent-soft active:opacity-70"
             >
-              관리
+              수정
             </button>
           </div>
 
-          {routines.length === 0 ? (
-            <button
-              onClick={onManageRoutines}
-              className="mt-3 flex h-[60px] w-full items-center justify-center rounded-[10px] border border-dashed border-white/20 text-[12px] font-medium text-white/40 active:opacity-70"
-            >
-              + 루틴 추가하기
-            </button>
+          {plan ? (
+            <p className="mt-3 rounded-[10px] bg-[#574a57] px-3.5 py-3 text-[13px] font-medium text-white">
+              {plan}
+            </p>
           ) : (
-            <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
-              {routines.map((routine) => (
-                <div
-                  key={routine.id}
-                  className="flex h-[60px] w-14 shrink-0 flex-col items-center justify-center gap-1.5 rounded-[10px] bg-[#574a57]"
-                >
-                  <span className="size-[22px] rounded-full" style={{ background: routine.color }} />
-                  <span className="px-1 text-center text-[8px] font-medium text-white">{routine.label}</span>
-                </div>
-              ))}
-            </div>
+            <button
+              onClick={onEditProfile}
+              className="mt-3 flex h-[52px] w-full items-center justify-center rounded-[10px] border border-dashed border-white/20 text-[12px] font-medium text-white/40 active:opacity-70"
+            >
+              + 할 일 추가하기
+            </button>
           )}
         </div>
       </div>

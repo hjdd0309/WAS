@@ -2,7 +2,7 @@ import { Router } from "express";
 import { createCallSession } from "../openai";
 import { PERSONAS } from "../personas";
 import { getProfile, saveProfile } from "../kv";
-import type { PersonaId, Routine } from "../types";
+import type { PersonaId } from "../types";
 
 export const callRouter = Router();
 
@@ -15,7 +15,7 @@ function validateBody(
   body: unknown,
 ): (
   | { error: string }
-  | { interests: string[]; plan: string; personaId?: PersonaId; previousSummary?: string; routines?: Routine[] }
+  | { interests: string[]; plan: string; personaId?: PersonaId; previousSummary?: string }
 ) {
   const b = (body ?? {}) as Record<string, unknown>;
 
@@ -78,11 +78,6 @@ callRouter.post("/call", async (req, res) => {
       }
       if (!validated.previousSummary && profile.previousSummary) {
         validated.previousSummary = profile.previousSummary;
-      }
-      // 루틴은 /api/profile로만 저장되고 프론트가 /api/call body에 애초에
-      // 담아 보내지 않는 필드라, 여기서 항상 KV 값으로 채운다(우선순위 비교 불필요).
-      if (profile.routines && profile.routines.length > 0) {
-        validated.routines = profile.routines;
       }
     }
   }

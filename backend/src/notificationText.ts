@@ -28,10 +28,6 @@ function buildPrompt(profile: UserProfile, personaId: string | undefined): strin
   const persona = getPersona(personaId);
   const interestList = profile.interests.length > 0 ? profile.interests.join(", ") : "특별히 정해진 건 없음";
   const plan = profile.plan || "특별히 없음";
-  const routineList =
-    profile.routines && profile.routines.length > 0
-      ? profile.routines.map((r) => r.label).join(", ")
-      : "특별히 정해진 건 없음";
   const openingStyle = OPENING_STYLES[Math.floor(Math.random() * OPENING_STYLES.length)];
 
   return `너는 "${persona.name}"라는 이름의 AI 동반자야. 사용자가 숏폼 콘텐츠를 계속 넘겨보고 있는 걸 감지해서, 잠시 후 전화하기 직전에 짧은 문자(카카오톡 메시지 느낌) 한 통을 먼저 보내려고 해 — "나 지금 전화해도 돼?" 느낌의 가벼운 예고 문자야. 사용자는 네가 AI라는 것도, 스크린타임을 도와주는 역할이라는 것도 이미 알고 있어 — 숨길 필요 없어, 다만 그 사실을 문자에서 굳이 설명하거나 티낼 필요도 없어.
@@ -49,7 +45,6 @@ ${openingStyle}
 [참고 정보 — 필요할 때만 자연스럽게 녹여서, 매번 그대로 언급하지는 말 것]
 - 사용자 관심사: ${interestList}
 - 사용자가 요즘 하려는 일/계획: ${plan}
-- 사용자가 챙기려고 등록해둔 루틴 목록: ${routineList}
 
 [말투]
 ${persona.textTone}

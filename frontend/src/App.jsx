@@ -5,8 +5,8 @@ import Home from './pages/Home'
 import Log from './pages/Log'
 import Report from './pages/Report'
 import Settings from './pages/Settings'
-import RoutineManage from './pages/RoutineManage'
 import AppManage from './pages/AppManage'
+import ProfileEdit from './pages/ProfileEdit'
 import CallSplash from './pages/CallSplash'
 import { getApp } from './apps'
 import { getPersona, DEFAULT_PERSONA_ID } from './personas'
@@ -19,7 +19,6 @@ import useAwayMonitor from './hooks/useAwayMonitor'
 
 const initial = loadState()
 const TABS = ['home', 'log', 'report', 'settings']
-const ROUTINE_PALETTE = ['#ff9090', '#511010', '#282c47', '#cbe291', '#586deb', '#b190ea', '#f6c453', '#4fd1c5']
 
 function hasCallDeepLink() {
   if (typeof window === 'undefined') return false
@@ -68,9 +67,8 @@ export default function App() {
       interests: profile.interests,
       plan: profile.plan,
       personaId: soonestApp?.personaId,
-      routines: profile.routines,
     })
-  }, [profile.onboarded, profile.interests, profile.plan, profile.routines, soonestApp?.personaId])
+  }, [profile.onboarded, profile.interests, profile.plan, soonestApp?.personaId])
 
   // 홈 화면에 머무는 동안 통화 세션을 미리 하나 받아둔다 — 실제로 전화
   // 버튼을 누르는 순간 /api/call 왕복을 기다리지 않도록 하기 위함
@@ -101,22 +99,6 @@ export default function App() {
 
   const addCallLog = (entry) =>
     setProfile((prev) => ({ ...prev, callLog: [entry, ...prev.callLog] }))
-
-  const addRoutine = (label) =>
-    setProfile((prev) => ({
-      ...prev,
-      routines: [
-        ...prev.routines,
-        {
-          id: crypto.randomUUID(),
-          label,
-          color: ROUTINE_PALETTE[prev.routines.length % ROUTINE_PALETTE.length],
-        },
-      ],
-    }))
-
-  const removeRoutine = (id) =>
-    setProfile((prev) => ({ ...prev, routines: prev.routines.filter((r) => r.id !== id) }))
 
   const addApp = (appId) =>
     setProfile((prev) => ({
@@ -182,10 +164,10 @@ export default function App() {
         <Home
           app={app}
           monitoredApps={profile.apps}
-          routines={profile.routines}
+          plan={profile.plan}
           awaySeconds={awaySeconds}
           onManageApps={() => setScreen('appManage')}
-          onManageRoutines={() => setScreen('routines')}
+          onEditProfile={() => setScreen('profileEdit')}
           // 발표 데모용 — 실제 away 타이머/서버 push를 기다리지 않고 벨 아이콘
           // 탭 한 번으로 통화 알림 배너를 바로 보여준다(팀 결정: 현장에선 실제
           // 푸시 배달을 신뢰할 수 없어 데모는 이 로컬 알림 경로로만 시연).
@@ -214,15 +196,6 @@ export default function App() {
         />
       )}
 
-      {screen === 'routines' && (
-        <RoutineManage
-          routines={profile.routines}
-          onAdd={addRoutine}
-          onRemove={removeRoutine}
-          onBack={() => setScreen('home')}
-        />
-      )}
-
       {screen === 'log' && <Log callLog={profile.callLog} {...tabProps} />}
 
       {screen === 'report' && <Report callLog={profile.callLog} {...tabProps} />}
@@ -230,8 +203,21 @@ export default function App() {
       {screen === 'settings' && (
         <Settings
           monitoredApps={profile.apps}
+          interests={profile.interests}
+          plan={profile.plan}
           onManageApps={() => setScreen('appManage')}
+          onEditProfile={() => setScreen('profileEdit')}
           {...tabProps}
+        />
+      )}
+
+      {screen === 'profileEdit' && (
+        <ProfileEdit
+          interests={profile.interests}
+          plan={profile.plan}
+          onChangeInterests={(interests) => updateProfile({ interests })}
+          onChangePlan={(plan) => updateProfile({ plan })}
+          onBack={() => setScreen('settings')}
         />
       )}
     </PhoneFrame>

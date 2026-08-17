@@ -10,17 +10,6 @@ export interface OnboardingData {
    * 그대로 프롬프트에 반영할 뿐 저장/영속화하지 않는다.
    */
   previousSummary?: string;
-  /**
-   * 프론트가 /api/call 요청에 직접 담아 보내지 않는 필드 — call.ts가 KV
-   * 프로필에서 항상 채워 넣는다(루틴은 /api/profile로만 저장/갱신되고 통화
-   * 요청 body에는 원래 없음).
-   */
-  routines?: Routine[];
-}
-
-export interface Routine {
-  id: string;
-  label: string;
 }
 
 export interface PushSubscriptionData {
@@ -36,7 +25,6 @@ export interface UserProfile {
   interests: string[];
   plan: string;
   personaId?: PersonaId;
-  routines?: Routine[];
   previousSummary?: string;
   /** 다음 알림 발송 시 바로 쓸 수 있도록 미리 생성해둔 문구. */
   pendingNotificationText?: string;

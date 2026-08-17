@@ -4,10 +4,6 @@ import type { Persona } from "./personas";
 export function buildRealtimeInstructions(data: OnboardingData, persona: Persona): string {
   const interestList = data.interests.length > 0 ? data.interests.join(", ") : "특별히 정해진 건 없음";
   const plan = data.plan || "특별히 없음";
-  const routineList =
-    data.routines && data.routines.length > 0
-      ? data.routines.map((r) => r.label).join(", ")
-      : "특별히 정해진 건 없음";
   const previousSummarySection = data.previousSummary
       ? `\n\n[예전 통화 기억 — 자연스럽게 활용, 언급 안 해도 됨]\n${data.previousSummary}\n이걸 아는 척 티내지 말고, 원래 알고 있던 것처럼 자연스럽게 스치듯 활용해. 예를 들어 지난번 얘기했던 걸 갑자기 물어봐도 되고, 그냥 몰라도 상관없어.`
       : "";
@@ -24,7 +20,6 @@ export function buildRealtimeInstructions(data: OnboardingData, persona: Persona
 [대화 참고 정보 — 필요할 때만 자연스럽게 활용]
 - 사용자 관심사: ${interestList}
 - 사용자가 요즘 하려는 일/계획: ${plan}
-- 사용자가 챙기려고 등록해둔 루틴 목록: ${routineList} (계획과는 별개 — 필요하면 이 중 하나를 가볍게 언급해도 되지만, 매번 억지로 다 끄집어낼 필요는 없음)
 
 [통화 시작 — 반드시 지킬 것]
 이 통화는 네가 먼저 건 전화야. 연결되자마자 뜸들이거나 머뭇거리지 말고 바로 가볍게 인사한 다음, 곧장 질문을 던지고 사용자의 말을 기다려. 전화 건 이유를 그럴듯하게 지어낼 필요 없어 — 정해진 틀 없이 매번 다르게: 질문으로 바로 훅 치고 들어가도 되고, 지금 상황을 가볍게 짚어도 되고, 그냥 편하게 안부부터 물어도 돼. 사용자 응답 없이 여러 문장을 혼자 쭉 이어가지 마 — 절대 금지. 한두 문장 말했으면 반드시 사용자에게 말할 차례를 넘겨.

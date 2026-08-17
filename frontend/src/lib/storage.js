@@ -18,14 +18,6 @@ export function getUserId() {
   return id
 }
 
-const DEFAULT_ROUTINES = [
-  { id: 'r1', label: '공모전 준비', color: '#ff9090' },
-  { id: 'r2', label: '책읽기', color: '#511010' },
-  { id: 'r3', label: '헬스장 가기', color: '#282c47' },
-  { id: 'r4', label: '요리 연습', color: '#cbe291' },
-  { id: 'r5', label: '수영', color: '#586deb' },
-]
-
 // 처음 방문했을 때 기록 화면이 텅 비어 보이지 않도록 "어제" 통화 2건만 시드로
 // 깔아둔다. "오늘" 항목은 실제로 통화를 마쳐야만 쌓인다 — CallSplash 참고.
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -57,7 +49,6 @@ const defaultState = {
   interests: [],
   plan: '',
   previousSummary: '',
-  routines: DEFAULT_ROUTINES,
   // callLog: [{ id, timestamp, personaId, appId, durationSeconds, quote }] — 실제로 마친
   // 통화가 여기 쌓인다. 기록/리포트 화면이 진짜 데이터를 보여주는 유일한 소스.
   callLog: DEFAULT_CALL_LOG,
