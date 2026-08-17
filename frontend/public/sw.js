@@ -25,7 +25,7 @@ self.addEventListener('push', (event) => {
   }
 
   const title = payload.title || '위스피'
-  const body = payload.body || '전화하고 있어요 📞'
+  const body = payload.body || '지금 뭐 해요?'
 
   event.waitUntil(
     self.registration.showNotification(title, {

@@ -8,7 +8,7 @@ export async function showCallNotification(personaName, body) {
   try {
     const registration = await navigator.serviceWorker.ready
     await registration.showNotification(personaName, {
-      body: body || '전화하고 있어요 📞 탭하면 바로 받을 수 있어요',
+      body: body || '지금 뭐 해요?',
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
       tag: 'was-call',

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import webpush from "web-push";
 import { getProfile, saveProfile } from "../kv";
-import { generateNotificationText } from "../notificationText";
+import { generateNotificationText, generateNotificationTextDebug } from "../notificationText";
 import { getPersona } from "../personas";
 import type { PushSubscriptionData } from "../types";
 
@@ -37,8 +37,8 @@ pushRouter.get("/push/preview-text", async (req, res) => {
   }
 
   const profile = (await getProfile(userId)) ?? { interests: [], plan: "", updatedAt: Date.now() };
-  const text = await generateNotificationText(profile, profile.personaId);
-  res.status(200).json({ text: text || "전화하고 있어요 📞 탭하면 바로 받을 수 있어요" });
+  const { text, debugError } = await generateNotificationTextDebug(profile, profile.personaId);
+  res.status(200).json({ text: text || "지금 뭐 해요?", debugError });
 });
 
 pushRouter.post("/push/subscribe", async (req, res) => {
@@ -77,7 +77,7 @@ pushRouter.post("/push/send", async (req, res) => {
   }
 
   const persona = getPersona(profile.personaId);
-  const body = profile.pendingNotificationText || "전화하고 있어요 📞";
+  const body = profile.pendingNotificationText || "지금 뭐 해요?";
 
   try {
     await webpush.sendNotification(

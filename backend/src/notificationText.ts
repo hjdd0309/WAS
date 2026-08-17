@@ -10,15 +10,19 @@ const MODEL = "gpt-4.1-nano";
 // 경향이 있어서, 서버 쪽에서 직접 진입 유형을 정해 매번 다른 구조로
 // 시작하도록 강제하는 편이 훨씬 확실하다(realtimeInstructions.ts의 통화
 // [진입 방식]과 같은 접근).
+// "지금 뭐 하고 있어요?" 축(=지금 이 순간 뭐 하는지 묻는 것) 하나로 통일하고,
+// 그 안에서 구조만 다르게 바리에이션을 준다 — 예고형/리액션형처럼 축 자체가
+// 다른 유형은 "네 생각나서 전화했어요" 류의 어색한 이유 설명으로 새는 경향이
+// 있어서 뺐다.
 // 예시 문장은 전부 [말투] 섹션과 같은 존댓말 톤으로 맞춰뒀다 — 예시가 반말이면
 // 작은 모델이 [말투] 지시보다 예시의 표면적 어투를 그대로 따라가버려서, 생성될
 // 때마다 존댓말/반말이 뒤섞이는 원인이 된다(실제로 발생했던 문제).
 const OPENING_STYLES = [
-  '질문형 — 다짜고짜 사소한 걸 물어보며 시작. "저기, [사소한 것] 기억나세요?" 처럼.',
-  '예고형 — 곧 전화한다고 직설적으로 알림. "저 이따 전화할게요, 받아주세요" 처럼.',
-  '관찰형 — 지금 이 순간 눈에 보이는/생각난 걸 그냥 이야기하며 시작. "어, 방금 [뭔가] 봤는데요" 처럼 — 이유를 덧붙이지 말고 상황만.',
-  '리액션형 — 놀라거나 신난 감탄사로 시작. "헐, 이거 뭐예요?" 처럼.',
-  '캐주얼 인사형 — 그냥 가볍게 안부. "지금 뭐 하세요?" 처럼.',
+  '가장 짧고 직접적으로. "지금 뭐 해요?" 처럼.',
+  '지금 하는 행동을 구체적으로 짚어서. "지금 뭐 보고 있어요?" 처럼.',
+  '과거형으로 살짝 바꿔서. "지금 뭐 하고 있었어요?" 처럼.',
+  '어순을 뒤집어서. "뭐 하고 있어요, 지금?" 처럼.',
+  '진행 상황을 묻는 느낌으로. "지금 뭐 하는 중이에요?" 처럼.',
 ] as const;
 
 // realtimeInstructions.ts와 같은 전제(AI라는 걸 숨기지 않음, 훈계 금지, 캐릭터
@@ -67,8 +71,21 @@ export async function generateNotificationText(
   profile: UserProfile,
   personaId: string | undefined,
 ): Promise<string | null> {
+  const result = await generateNotificationTextDebug(profile, personaId);
+  return result.text;
+}
+
+// generateNotificationText와 로직은 같지만 실패 사유를 함께 반환한다.
+// preview-text 라우트가 이걸로 디버깅 중 — Vercel 로그 접근 없이도 응답
+// 본문(Network 탭)에서 바로 실패 원인을 볼 수 있게 하기 위한 임시 조치.
+// 원인 파악 끝나면 이 함수를 걷어내고 generateNotificationText 본문에
+// 로직을 다시 합쳐도 된다.
+export async function generateNotificationTextDebug(
+  profile: UserProfile,
+  personaId: string | undefined,
+): Promise<{ text: string | null; debugError?: string }> {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) return { text: null, debugError: "OPENAI_API_KEY not set" };
 
   const model = MODEL;
   const controller = new AbortController();
@@ -91,16 +108,17 @@ export async function generateNotificationText(
     });
 
     if (!res.ok) {
-      console.error("notification text generation failed", res.status, await res.text());
-      return null;
+      const errText = await res.text();
+      console.error("notification text generation failed", res.status, errText);
+      return { text: null, debugError: `HTTP ${res.status}: ${errText.slice(0, 300)}` };
     }
 
     const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const text = data.choices?.[0]?.message?.content?.trim();
-    return text ? text.slice(0, MAX_LENGTH) : null;
+    return { text: text ? text.slice(0, MAX_LENGTH) : null, debugError: text ? undefined : "empty completion" };
   } catch (err) {
     console.error("notification text generation error", err);
-    return null;
+    return { text: null, debugError: err instanceof Error ? `${err.name}: ${err.message}` : String(err) };
   } finally {
     clearTimeout(timeout);
   }
