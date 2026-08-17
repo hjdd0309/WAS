@@ -6,7 +6,9 @@ export default function OnboardingIntro({ onNext }) {
   return (
     <div className="flex h-full flex-col px-6 pb-8 pt-4">
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col items-center justify-center gap-7 overflow-y-auto text-center">
-        <h1 className="text-[32px] font-semibold text-white">잠깐만요!</h1>
+        <h1 className="text-[32px] font-semibold text-white">
+          잠<span className="inline-block rotate-3 text-[38px]">깐</span>만요!
+        </h1>
 
         <img src={onboardingImage12} alt="위스피 마스코트" className="w-full max-w-[226px]" />
 
