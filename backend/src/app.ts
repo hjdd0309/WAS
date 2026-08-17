@@ -33,9 +33,13 @@ export function createApp() {
     res.status(200).json({ ok: true });
   });
 
+  // 부스 시연은 방문객들이 대부분 같은 와이파이(=같은 외부 IP)를 공유해서,
+  // 짧은 시간에 여러 명이 연달아 통화를 시도하면 OpenAI 쪽 한도보다 이 리밋에
+  // 먼저 걸릴 수 있다(#14) — 비용 가드레일 목적은 유지하되 부스 트래픽을
+  // 감당할 수 있게 완화.
   const callLimiter = rateLimit({
     windowMs: 60_000,
-    limit: 10,
+    limit: 30,
     standardHeaders: true,
     legacyHeaders: false,
   });
