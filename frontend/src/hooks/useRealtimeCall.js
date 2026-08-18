@@ -34,7 +34,7 @@ function postSdpOffer(clientSecret, sdp) {
 const ERROR_MESSAGES = {
   network: '통화 서버에 연결할 수 없어요. 네트워크를 확인해주세요.',
   session: '통화를 시작할 수 없어요. 잠시 후 다시 시도해주세요.',
-  busy: '지금 많이 몰렸어요. 잠시 후 다시 걸어주세요.',
+  busy: '접속 인원이 많아 연결에 실패했어요. 조금만 기다린 후에 시도해주세요.',
   mic: '마이크 권한이 필요해요. 브라우저 설정에서 허용해주세요.',
   webrtc: '통화 연결에 실패했어요. 다시 시도해주세요.',
 }
@@ -48,6 +48,7 @@ export default function useRealtimeCall() {
   // idle | connecting | connected | ended | error
   const [status, setStatus] = useState('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [errorKind, setErrorKind] = useState('')
   const [transcript, setTranscript] = useState([])
   const [aiSpeaking, setAiSpeaking] = useState(false)
   const [muted, setMutedState] = useState(false)
@@ -295,6 +296,7 @@ export default function useRealtimeCall() {
       startedRef.current = true
       setStatus('connecting')
       setErrorMessage('')
+      setErrorKind('')
 
       try {
         const payload = {
@@ -400,6 +402,7 @@ export default function useRealtimeCall() {
         teardown()
         const key = err instanceof Error && ERROR_MESSAGES[err.message] ? err.message : 'webrtc'
         setErrorMessage(ERROR_MESSAGES[key])
+        setErrorKind(key)
         setStatus('error')
       }
     },
@@ -439,6 +442,7 @@ export default function useRealtimeCall() {
   return {
     status,
     errorMessage,
+    errorKind,
     transcript,
     aiSpeaking,
     muted,
