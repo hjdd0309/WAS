@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { formatDuration } from '../../hooks/useCallTimer'
+import wispyMascot from '../../assets/illustrations/ghost-image-1.png'
 
 const KEYPAD_KEYS = [
   ['1', ''],
@@ -145,6 +146,16 @@ export default function CallActive({ persona, aiSpeaking, muted, speakerOn, onTo
         >
           {persona.name}
         </p>
+      </div>
+
+      <div className="mt-8 flex justify-center">
+        <img
+          src={wispyMascot}
+          alt={persona.name}
+          className={`w-[160px] transition-all duration-500 ${
+            aiSpeaking ? 'drop-shadow-[0_0_26px_rgba(177,144,234,0.6)]' : ''
+          }`}
+        />
       </div>
 
       <div className="flex-1" />
