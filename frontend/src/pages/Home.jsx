@@ -14,6 +14,7 @@ function formatAway(seconds) {
 export default function Home({
   app,
   monitoredApps,
+  interests = [],
   plan,
   awaySeconds = 0,
   onCallPress,
@@ -137,6 +138,38 @@ export default function Home({
                 )
               })}
             </div>
+          )}
+
+          <div className="my-4 h-px bg-white/10" />
+
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold text-white">관심사</p>
+            <button
+              onClick={onEditProfile}
+              className="text-[11px] font-medium text-accent-soft active:opacity-70"
+            >
+              수정
+            </button>
+          </div>
+
+          {interests.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {interests.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-accent/20 px-2.5 py-1 text-[13px] font-medium text-accent-soft"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <button
+              onClick={onEditProfile}
+              className="mt-3 flex h-[44px] w-full items-center justify-center rounded-[10px] border border-dashed border-white/20 text-[12px] font-medium text-white/40 active:opacity-70"
+            >
+              + 관심사 추가하기
+            </button>
           )}
 
           <div className="my-4 h-px bg-white/10" />

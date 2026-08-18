@@ -85,14 +85,8 @@ export default function AppManage({ monitoredApps, onAddApp, onUpdateApp, onRemo
                       onChangeLimit={(limitMinutes) => setDraft((d) => ({ ...d, limitMinutes }))}
                       personaId={draft.personaId}
                       onSelectPersona={(personaId) => setDraft((d) => ({ ...d, personaId }))}
+                      onRemove={() => onRemoveApp(m.id)}
                     />
-
-                    <button
-                      onClick={() => onRemoveApp(m.id)}
-                      className="mt-3 text-[12px] font-medium text-[#ff453a] active:opacity-70"
-                    >
-                      이 앱 그만 모니터링하기
-                    </button>
 
                     <div className="mt-3 flex gap-2">
                       <button

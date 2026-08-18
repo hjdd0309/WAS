@@ -19,12 +19,26 @@ function SadWispy() {
         <circle cx="605" cy="684" r="112" fill="#060408" filter="url(#sadWispyMouthSoften)" />
         <path d="M539,690 c22,-40 110,-40 132,0" stroke="#b190ea" strokeWidth="38" strokeLinecap="round" fill="none" />
         <path
-          d="M718,498 c18,25.2 18,46.8 0,61.2 a16.2,16.2 0 0 1 -25.2,0 c-18,-14.4 -18,-36 0,-61.2 7.2,-10.8 18,-10.8 25.2,0 Z"
+          d="M700,522 c18,25.2 18,46.8 0,61.2 a16.2,16.2 0 0 1 -25.2,0 c-18,-14.4 -18,-36 0,-61.2 7.2,-10.8 18,-10.8 25.2,0 Z"
           fill="#8fd3ff"
           opacity="0.9"
         />
       </svg>
     </div>
+  )
+}
+
+// "…실패했어요. 조금만 기다린 후에…"처럼 문장 두 개가 이어진 문구를 마침표
+// 뒤에서 줄바꿈해 보여준다.
+function renderWithLineBreak(message) {
+  const idx = message.indexOf('. ')
+  if (idx === -1) return message
+  return (
+    <>
+      {message.slice(0, idx + 1)}
+      <br />
+      {message.slice(idx + 2)}
+    </>
   )
 }
 
@@ -40,7 +54,7 @@ export default function CallConnecting({ status, errorMessage, errorKind, person
       >
         <div className="flex flex-1 flex-col items-center justify-center gap-5 px-8 text-center">
           <SadWispy />
-          <p className="text-[19px] font-bold text-white">{errorMessage}</p>
+          <p className="text-[19px] font-bold text-white">{renderWithLineBreak(errorMessage)}</p>
         </div>
         <div className="w-full px-6 pb-10">
           <button

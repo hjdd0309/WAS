@@ -164,6 +164,7 @@ export default function App() {
         <Home
           app={app}
           monitoredApps={profile.apps}
+          interests={profile.interests}
           plan={profile.plan}
           awaySeconds={awaySeconds}
           onManageApps={() => setScreen('appManage')}
