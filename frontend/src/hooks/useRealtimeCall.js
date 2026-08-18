@@ -6,6 +6,17 @@ import { fetchCallSession, takePrefetchedSession } from '../lib/callSession'
 const TONE_REMINDER =
   '[내부 지시 — 사용자에게 보이지 않음] 지금까지의 텐션과 존댓말 톤을 그대로 유지해. 문장을 딱딱하거나 완벽하게 다듬지 말고, 추임새(음, 어, 그니까)를 섞어서 편하게 대답해. 방금 전에 썼던 표현이나 문장 구조를 반복하지 말고 새롭게 말해.'
 
+// realtimeInstructions.ts의 "재정향(3단계, 반드시 수행)" 지시가 system prompt에만
+// 있으면 대화가 몇 턴 이어지는 순간 모델이 놓치거나(gpt-realtime-mini라 특히)
+// 구체적인 plan 대신 뭉뚱그린 질문으로 대체해버리는 문제를 실측으로 확인했다
+// (예: "농구화 사기"를 전혀 언급 안 하고 "다른 계획 있어?"로 퉁침, 사용자가
+// 끊겠다고 해도 plan 언급 없이 그냥 인사만 하고 끝냄). TONE_REMINDER와 같은
+// 방식으로 매 턴마다 구체적인 plan 문구를 직접 박아 넣어 상기시켜 신뢰도를 높인다.
+function buildPlanReminder(plan) {
+  if (!plan) return ''
+  return `\n\n[내부 지시 — 사용자에게 보이지 않음] 사용자가 요즘 하려는 일: "${plan}". 이 통화에서 이걸 단 한 번도 언급한 적이 없다면, 이번 응답이나 다음 응답에서 반드시 가볍게 물어봐("저번에 말한 ○○ 어떻게 됐어?" 식으로) — 뭉뚱그려서 "다른 계획 있어?"처럼 묻지 말고 반드시 위 구체적인 내용으로. 이 통화 중 단 한 번이라도 이미 언급했다면, 그 이후로는 절대 다시 묻거나 언급하지 말고 그냥 자연스럽게 흘러가.`
+}
+
 // <audio> 기본 volume은 1.0(최대)이라 안드로이드에서 AI 음성이 과도하게 크게
 // 들리는 원인 중 하나였다. 소프트웨어 단에서 크게 낮춰 재생한다 — 다만
 // 이건 볼륨 슬라이더가 아니라 고정 완화값이라, "미디어 볼륨"이 아닌 다른
@@ -65,6 +76,7 @@ export default function useRealtimeCall() {
   const startedRef = useRef(false)
   const responseInFlightRef = useRef(false)
   const micMutedByUserRef = useRef(false)
+  const planRef = useRef('')
   // 연결 직후 첫 인사(첫 response) 도중엔 마이크를 아예 죽여둔다. 원격 오디오
   // 트랙이 막 붙은 시점엔 브라우저 에코 캔슬레이션이 그 트랙을 레퍼런스로
   // 잡기 전이라, AI 목소리가 마이크로 살짝 새어 들어가 서버 VAD가 "사용자가
@@ -168,7 +180,7 @@ export default function useRealtimeCall() {
               item: {
                 type: 'message',
                 role: 'system',
-                content: [{ type: 'input_text', text: TONE_REMINDER }],
+                content: [{ type: 'input_text', text: TONE_REMINDER + buildPlanReminder(planRef.current) }],
               },
             }),
           )
@@ -305,6 +317,7 @@ export default function useRealtimeCall() {
           personaId: onboarding.personaId,
           previousSummary: onboarding.previousSummary || undefined,
         }
+        planRef.current = payload.plan
 
         // 홈 화면에 머무는 동안 미리 받아둔 세션이 있으면 그걸 쓰고,
         // 없으면 지금 발급받는다 — 어느 쪽이든 마이크 캡처와 동시에 진행해
