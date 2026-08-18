@@ -86,14 +86,6 @@ export default function Home({
               <p className="truncate text-[15px] font-semibold text-white">{app.name}</p>
               <p className="text-[12px] text-[#afafaf]">보고 계신 지 45분</p>
             </div>
-            <button
-              aria-label="바로가기"
-              className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[#635281] bg-[#1b171c] active:opacity-70"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
           </div>
         </div>
 
