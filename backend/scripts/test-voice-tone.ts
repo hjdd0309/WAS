@@ -82,6 +82,16 @@ async function main() {
     playPath = applyPitchSpeed(outPath, factor, path.join(outDir, `voice-sample-${stamp}-x${factor}.mp3`));
   }
 
+  const speedArg = args.get("speed");
+  if (speedArg) {
+    const factor = Number(speedArg);
+    if (!Number.isFinite(factor) || factor < 0.5 || factor > 2.0) {
+      console.error("--speed는 0.5~2.0 사이여야 해 (ffmpeg atempo 필터 제한, 예: 1.2)");
+      process.exit(1);
+    }
+    playPath = applySpeed(playPath, factor, path.join(outDir, `voice-sample-${stamp}-speed${factor}.mp3`));
+  }
+
   if (process.platform === "darwin") {
     console.log("재생 중...");
     spawn("afplay", [playPath], { stdio: "inherit" });
@@ -109,6 +119,26 @@ function applyPitchSpeed(inputPath: string, factor: number, outputPath: string):
     "-y",
     "-i", inputPath,
     "-filter:a", `asetrate=${newRate},aresample=${sampleRate}`,
+    outputPath,
+  ]);
+
+  if (result.status !== 0) {
+    console.error("ffmpeg 처리 실패:", result.stderr?.toString());
+    process.exit(1);
+  }
+
+  console.log(`저장됨(가공본): ${outputPath}`);
+  return outputPath;
+}
+
+// atempo는 asetrate와 달리 피치는 그대로 두고 재생 속도만 바꾼다 —
+// 목소리 톤은 안 변하고 그냥 말이 빨라지는/느려지는 느낌만 준다.
+function applySpeed(inputPath: string, factor: number, outputPath: string): string {
+  console.log(`속도 ${factor}배 처리 중... (피치 유지)`);
+  const result = spawnSync("ffmpeg", [
+    "-y",
+    "-i", inputPath,
+    "-filter:a", `atempo=${factor}`,
     outputPath,
   ]);
 

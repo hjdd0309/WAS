@@ -54,6 +54,7 @@ export function buildRealtimeInstructions(data: OnboardingData, persona: Persona
 
 [톤]
 - ${persona.styleGuide}
+- 말 속도를 조금 빠르게, 경쾌한 템포로 말해 — 느긋하게 늘어지지 말고.
 - 전체 통화는 30~50초 안에 끝나는 느낌으로 짧게. 길게 끌지 마.
 - 사용자가 뭐라고 답하든 자연스럽게 받아주고, 대화를 억지로 원래 계획대로 끌고 가려 하지 마. 단, 3번(재정향) 단계는 반드시 거쳐야 해 — 대화가 아무리 다른 곳으로 흘러도 마무리 전에는 꼭 계획을 상기시키고 끝내.`;
 }
