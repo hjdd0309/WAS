@@ -22,6 +22,7 @@ export default function Home({
   onManageApps,
   onEditProfile,
   onDemoNotification,
+  onOpenDemoExperience,
 }) {
   const [showAwayNotice, setShowAwayNotice] = useState(false)
 
@@ -73,7 +74,21 @@ export default function Home({
           </div>
         </div>
 
-        <div className="mt-6 rounded-[20px] border border-[#695b69]/60 bg-[#1d191d] p-4">
+        <button
+          type="button"
+          onClick={onOpenDemoExperience}
+          className="mt-6 flex w-full items-center justify-between rounded-[16px] bg-accent px-4 py-3.5 text-left active:opacity-70"
+        >
+          <div>
+            <p className="text-[14px] font-bold text-black">진짜처럼 체험해보기</p>
+            <p className="mt-0.5 text-[11px] text-black/60">인스타그램 쓰다가 전화 오는 걸 미리 볼 수 있어요</p>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
+        </button>
+
+        <div className="mt-4 rounded-[20px] border border-[#695b69]/60 bg-[#1d191d] p-4">
           <div className="flex items-center justify-between">
             <p className="text-[12px] text-white">지금 집중하고 있던 것</p>
             <span className="text-[11px] font-medium text-accent-soft">지금</span>

@@ -8,6 +8,7 @@ import Settings from './pages/Settings'
 import AppManage from './pages/AppManage'
 import ProfileEdit from './pages/ProfileEdit'
 import CallSplash from './pages/CallSplash'
+import DemoExperience from './pages/DemoExperience'
 import { getApp } from './apps'
 import { getPersona, DEFAULT_PERSONA_ID } from './personas'
 import { loadState, saveState } from './lib/storage'
@@ -129,7 +130,12 @@ export default function App() {
   // "다른 앱 사용 시간"은 브라우저가 알 수 없어서, 이 앱을 벗어나 있던
   // 시간을 근사치로 쓴다 — 통화 중/온보딩 중에는 재트리거되지 않게 막는다.
   const { awaySeconds } = useAwayMonitor({
-    enabled: profile.onboarded && soonestApp !== null && screen !== 'onboarding' && screen !== 'callSplash',
+    enabled:
+      profile.onboarded &&
+      soonestApp !== null &&
+      screen !== 'onboarding' &&
+      screen !== 'callSplash' &&
+      screen !== 'demo',
     limitMinutes: soonestApp?.limitMinutes ?? 45,
     personaName: persona.name,
     onThresholdReached: () => setScreen('callSplash'),
@@ -183,7 +189,16 @@ export default function App() {
             const text = await fetchNotificationPreviewText()
             showCallNotification(persona.name, text)
           }}
+          onOpenDemoExperience={() => setScreen('demo')}
           {...tabProps}
+        />
+      )}
+
+      {screen === 'demo' && (
+        <DemoExperience
+          persona={persona}
+          onExit={() => setScreen('home')}
+          onTriggerCall={() => setScreen('callSplash')}
         />
       )}
 
