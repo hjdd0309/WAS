@@ -11,7 +11,7 @@ import "dotenv/config";
 import { writeFile } from "node:fs/promises";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { getPersona, DEFAULT_PERSONA_ID } from "../src/personas";
 
 const DEFAULT_TEXT = "지금 뭐 보고 있었어?";
@@ -63,18 +63,62 @@ async function main() {
 
   const outDir = path.join(__dirname, ".tmp");
   mkdirSync(outDir, { recursive: true });
-  const outPath = path.join(outDir, `voice-sample-${Date.now()}.mp3`);
+  const stamp = Date.now();
+  const outPath = path.join(outDir, `voice-sample-${stamp}.mp3`);
 
   const buffer = Buffer.from(await res.arrayBuffer());
   await writeFile(outPath, buffer);
   console.log(`저장됨: ${outPath}`);
 
+  let playPath = outPath;
+
+  const pitchSpeedArg = args.get("pitchSpeed");
+  if (pitchSpeedArg) {
+    const factor = Number(pitchSpeedArg);
+    if (!Number.isFinite(factor) || factor <= 0) {
+      console.error("--pitchSpeed는 0보다 큰 숫자여야 해 (예: 1.3)");
+      process.exit(1);
+    }
+    playPath = applyPitchSpeed(outPath, factor, path.join(outDir, `voice-sample-${stamp}-x${factor}.mp3`));
+  }
+
   if (process.platform === "darwin") {
     console.log("재생 중...");
-    spawn("afplay", [outPath], { stdio: "inherit" });
+    spawn("afplay", [playPath], { stdio: "inherit" });
   } else {
     console.log("맥이 아니라 자동 재생은 생략 — 위 경로 파일을 직접 재생해줘.");
   }
+}
+
+// playbackRate를 올리는 것과 같은 효과 — 재생 속도와 피치를 함께 올려서
+// "톰과 제리"/"미니언즈" 같은 확실한 어린아이/캐릭터 톤을 만든다.
+// TTS 모델에게 말로 지시하는 것보다 훨씬 극적이고 확실한 효과.
+function applyPitchSpeed(inputPath: string, factor: number, outputPath: string): string {
+  const probe = spawnSync("ffprobe", [
+    "-v", "error",
+    "-select_streams", "a:0",
+    "-show_entries", "stream=sample_rate",
+    "-of", "csv=p=0",
+    inputPath,
+  ]);
+  const sampleRate = Number(probe.stdout.toString().trim()) || 44100;
+  const newRate = Math.round(sampleRate * factor);
+
+  console.log(`피치/속도 ${factor}배 처리 중... (원본 ${sampleRate}Hz → ${newRate}Hz로 재해석)`);
+  const result = spawnSync("ffmpeg", [
+    "-y",
+    "-i", inputPath,
+    "-filter:a", `asetrate=${newRate},aresample=${sampleRate}`,
+    outputPath,
+  ]);
+
+  if (result.status !== 0) {
+    console.error("ffmpeg 처리 실패:", result.stderr?.toString());
+    process.exit(1);
+  }
+
+  console.log(`저장됨(가공본): ${outputPath}`);
+  return outputPath;
 }
 
 main();
