@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { formatDuration } from '../../hooks/useCallTimer'
+import wispyMascot from '../../assets/illustrations/ghost-image-1.png'
 
 const KEYPAD_KEYS = [
   ['1', ''],
@@ -58,7 +59,7 @@ function HangupIcon() {
       height="30"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#fff"
+      stroke="#000"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -69,14 +70,46 @@ function HangupIcon() {
   )
 }
 
-function CallControlButton({ label, active, onClick, icon }) {
+function PersonAddIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="8" r="4" />
+      <path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 4.2 1.72" />
+      <path d="M19 8v6" />
+      <path d="M16 11h6" />
+    </svg>
+  )
+}
+
+function MessageIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="3" />
+      <path d="m4 7 8 6 8-6" />
+    </svg>
+  )
+}
+
+function PersonIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21v-1a8 8 0 0 1 16 0v1" />
+    </svg>
+  )
+}
+
+function CallControlButton({ label, active, onClick, icon, disabled }) {
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       aria-label={label}
       aria-pressed={active}
-      className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl py-4 transition-colors active:opacity-70 ${
-        active ? 'bg-white text-black' : 'bg-white/10 text-white'
+      aria-disabled={disabled}
+      className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl py-4 transition-colors ${
+        disabled
+          ? 'pointer-events-none bg-white/5 text-white/30'
+          : `active:opacity-70 ${active ? 'bg-white text-black' : 'bg-white/10 text-white'}`
       }`}
     >
       {icon}
@@ -96,18 +129,33 @@ export default function CallActive({ persona, aiSpeaking, muted, speakerOn, onTo
   }, [])
 
   return (
-    <div className="flex h-full w-full flex-col bg-black px-6 pb-10 pt-20">
-      <div className="flex flex-col items-center gap-3">
-        <div className="relative flex items-center justify-center">
-          {aiSpeaking && <span className="absolute size-28 animate-ping rounded-full bg-accent/30" />}
-          <div className="relative flex size-28 items-center justify-center rounded-full bg-white/10 text-5xl">
-            {persona.emoji}
-          </div>
-        </div>
-        <p className="text-[24px] font-semibold text-white">{persona.name}</p>
-        <p className="text-[15px] tracking-wide text-white/50">
+    <div
+      className="flex h-full w-full flex-col px-6 pb-10 pt-20"
+      style={{
+        backgroundImage: 'linear-gradient(204deg, rgba(251,218,254,0.2) 9%, rgba(36,30,40,0.2) 85%), #1b171c',
+      }}
+    >
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-[20px] text-[#b9b9b9]">
           {keypadOpen && dialed ? dialed : formatDuration(elapsed)}
         </p>
+        <p
+          className={`text-[45px] font-extrabold transition-all duration-500 ${
+            aiSpeaking ? 'animate-pulse text-white drop-shadow-[0_0_18px_rgba(177,144,234,0.55)]' : 'text-white'
+          }`}
+        >
+          {persona.name}
+        </p>
+      </div>
+
+      <div className="mt-8 flex justify-center">
+        <img
+          src={wispyMascot}
+          alt={persona.name}
+          className={`w-[160px] transition-all duration-500 ${
+            aiSpeaking ? 'drop-shadow-[0_0_26px_rgba(177,144,234,0.6)]' : ''
+          }`}
+        />
       </div>
 
       <div className="flex-1" />
@@ -144,6 +192,9 @@ export default function CallActive({ persona, aiSpeaking, muted, speakerOn, onTo
             onClick={() => onToggleSpeaker(!speakerOn)}
             icon={<SpeakerIcon on={speakerOn} />}
           />
+          <CallControlButton label="통화 추가" disabled icon={<PersonAddIcon />} />
+          <CallControlButton label="메시지" disabled icon={<MessageIcon />} />
+          <CallControlButton label="연락처" disabled icon={<PersonIcon />} />
         </div>
       )}
 
@@ -151,7 +202,7 @@ export default function CallActive({ persona, aiSpeaking, muted, speakerOn, onTo
         <button
           onClick={onHangup}
           aria-label="통화 종료"
-          className="flex size-[72px] items-center justify-center rounded-full bg-[#ff453a] shadow-[0_6px_16px_rgba(0,0,0,0.35)] active:opacity-70"
+          className="flex size-[72px] items-center justify-center rounded-full bg-accent shadow-[0_6px_16px_rgba(0,0,0,0.35)] active:opacity-70"
         >
           <HangupIcon />
         </button>

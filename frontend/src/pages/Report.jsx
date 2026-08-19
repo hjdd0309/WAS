@@ -42,7 +42,7 @@ export default function Report({ callLog, onNavigate, onCallPress }) {
   const appUsage = computeAppUsage(recentCalls)
 
   return (
-    <div className="flex h-full w-full flex-col bg-black">
+    <div className="flex h-full w-full flex-col bg-[#1b171c]">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <ScreenHeader title="리포트" subtitle="이번 주, 당신의 변화를 확인해보세요" />
 

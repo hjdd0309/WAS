@@ -1,15 +1,35 @@
 // 온보딩 완료 여부와 선택 결과를 localStorage에 보존해 새로고침/재방문에도
 // 온보딩을 다시 거치지 않도록 한다. 백엔드는 stateless라 이 상태는 전적으로
 // 프론트(브라우저)가 들고 있어야 한다.
-const STORAGE_KEY = 'was:v1'
+import { PERSONAS, DEFAULT_PERSONA_ID } from '../personas'
 
-const DEFAULT_ROUTINES = [
-  { id: 'r1', label: '공모전 준비', color: '#ff9090' },
-  { id: 'r2', label: '책읽기', color: '#511010' },
-  { id: 'r3', label: '헬스장 가기', color: '#282c47' },
-  { id: 'r4', label: '요리 연습', color: '#cbe291' },
-  { id: 'r5', label: '수영', color: '#586deb' },
-]
+const STORAGE_KEY = 'was:v1'
+const VALID_PERSONA_IDS = PERSONAS.map((p) => p.id)
+
+// 예전엔 페르소나가 10개였다가 지금은 'whispy' 하나로 줄었다. 그 시절 저장된
+// personaId(예: 'bestie', 'mom')가 브라우저에 그대로 남아있으면 /api/profile
+// 저장 요청이 매번 "invalid personaId"로 400 거절당해 서버 동기화 자체가
+// 죽어버린다 — 로드 시점에 지금 존재하는 페르소나 목록 기준으로 무효화한다.
+// null/undefined도 백엔드 검증에선 "값이 있는데 잘못됨"으로 걸리므로(personaId
+// 필드 자체가 없어야만 검증을 건너뜀), 안전하게 항상 유효한 기본값으로 채운다.
+function sanitizePersonaId(id) {
+  return VALID_PERSONA_IDS.includes(id) ? id : DEFAULT_PERSONA_ID
+}
+
+// 로그인 없이 브라우저별로 하나씩 발급하는 익명 식별자. 서버에 프로필을
+// 저장/조회할 때 x-user-id 헤더로 실어 보낸다 — QR로 들어온 관객/심사위원도
+// 각자 별개 사용자로 자동 분리된다.
+const USER_ID_KEY = 'was:userId'
+
+export function getUserId() {
+  if (typeof window === 'undefined') return ''
+  let id = window.localStorage.getItem(USER_ID_KEY)
+  if (!id) {
+    id = crypto.randomUUID()
+    window.localStorage.setItem(USER_ID_KEY, id)
+  }
+  return id
+}
 
 // 처음 방문했을 때 기록 화면이 텅 비어 보이지 않도록 "어제" 통화 2건만 시드로
 // 깔아둔다. "오늘" 항목은 실제로 통화를 마쳐야만 쌓인다 — CallSplash 참고.
@@ -19,7 +39,7 @@ const DEFAULT_CALL_LOG = [
   {
     id: 'seed1',
     timestamp: seedNow - DAY_MS - 3 * 60 * 60 * 1000,
-    personaId: 'tsundereBro',
+    personaId: 'whispy',
     appId: 'kakaotalk',
     durationSeconds: 29,
     quote: '까칠하게 굴길래 저도 모르게 웃음이 났어요',
@@ -27,7 +47,7 @@ const DEFAULT_CALL_LOG = [
   {
     id: 'seed2',
     timestamp: seedNow - DAY_MS - 8 * 60 * 60 * 1000,
-    personaId: 'trainer',
+    personaId: 'whispy',
     appId: 'youtube',
     durationSeconds: 51,
     quote: '오늘 운동 언제 갈 거냐고 다그쳤어요',
@@ -42,7 +62,6 @@ const defaultState = {
   interests: [],
   plan: '',
   previousSummary: '',
-  routines: DEFAULT_ROUTINES,
   // callLog: [{ id, timestamp, personaId, appId, durationSeconds, quote }] — 실제로 마친
   // 통화가 여기 쌓인다. 기록/리포트 화면이 진짜 데이터를 보여주는 유일한 소스.
   callLog: DEFAULT_CALL_LOG,
@@ -65,10 +84,12 @@ export function loadState() {
             id: 'legacy',
             appId: parsed.appId,
             limitMinutes: parsed.limitMinutes ?? 45,
-            personaId: parsed.personaId ?? null,
+            personaId: sanitizePersonaId(parsed.personaId),
           },
         ]
       }
+    } else {
+      merged.apps = merged.apps.map((a) => ({ ...a, personaId: sanitizePersonaId(a.personaId) }))
     }
 
     return merged

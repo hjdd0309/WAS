@@ -1,13 +1,13 @@
 {
-  "name": "잠깐만 - Wait A Second",
+  "name": "Wispy",
   "short_name": "잠깐만",
   "description": "정신없이 화면에 빠졌을 때, 위스피가 전화로 불러내드려요.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#1b171c",
+  "theme_color": "#1b171c",
   "lang": "ko",
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

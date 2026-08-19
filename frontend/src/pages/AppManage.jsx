@@ -25,7 +25,7 @@ export default function AppManage({ monitoredApps, onAddApp, onUpdateApp, onRemo
   }
 
   return (
-    <div className="flex h-full w-full flex-col bg-black">
+    <div className="flex h-full w-full flex-col bg-[#1b171c]">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <div className="flex items-center gap-3">
           <button
@@ -85,14 +85,8 @@ export default function AppManage({ monitoredApps, onAddApp, onUpdateApp, onRemo
                       onChangeLimit={(limitMinutes) => setDraft((d) => ({ ...d, limitMinutes }))}
                       personaId={draft.personaId}
                       onSelectPersona={(personaId) => setDraft((d) => ({ ...d, personaId }))}
+                      onRemove={() => onRemoveApp(m.id)}
                     />
-
-                    <button
-                      onClick={() => onRemoveApp(m.id)}
-                      className="mt-3 text-[12px] font-medium text-[#ff453a] active:opacity-70"
-                    >
-                      이 앱 그만 모니터링하기
-                    </button>
 
                     <div className="mt-3 flex gap-2">
                       <button

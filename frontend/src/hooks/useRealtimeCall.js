@@ -1,14 +1,23 @@
 import { useCallback, useRef, useState } from 'react'
-
-// 배포 시 반드시 실제 백엔드 URL로 오버라이드해야 함 (frontend/.env.example 참고).
-// 백엔드는 프론트와 별도로 배포되므로(Vercel 등) 상대 경로로는 닿지 않는다.
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')
-const APP_SECRET = import.meta.env.VITE_APP_SHARED_SECRET || ''
+import { fetchCallSession, takePrefetchedSession } from '../lib/callSession'
 
 // 매 응답 직전에 톤을 다시 상기시켜, 대화가 길어질수록 모델이 시스템
 // instructions을 덜 따르는 문제를 보완한다.
 const TONE_REMINDER =
-  '[내부 지시 — 사용자에게 보이지 않음] 지금까지의 텐션과 편한 반말 톤을 그대로 유지해. 문장을 정중하거나 완벽하게 다듬지 말고, 추임새(음, 어, 그니까)를 섞어서 편하게 대답해. 방금 전에 썼던 표현이나 문장 구조를 반복하지 말고 새롭게 말해.'
+  '[내부 지시 — 사용자에게 보이지 않음] 지금까지의 텐션과 존댓말 톤을 그대로 유지해. 문장을 딱딱하거나 완벽하게 다듬지 말고, 추임새(음, 어, 그니까)를 섞어서 편하게 대답해. 방금 전에 썼던 표현이나 문장 구조를 반복하지 말고 새롭게 말해. 반말("뭐 해?", "봤어?")로 새지 말고 반드시 존댓말("뭐 해요?", "봤어요?")로 끝낼 것 — 대화가 길어질수록 반말로 흘러가는 경향이 있으니 매번 스스로 점검해. 그렇다고 "여쭤봐도 될까요?", "~해주실 수 있나요" 처럼 지나치게 격식체로 넘어가지도 마 — 친한 사이에 편하게 쓰는 존댓말("뭐 해요?", "봤어요?")이 목표지, 공손하고 딱딱한 존댓말이 아니야. 사용자가 반말로 짧게 답해도("ㅇㅇ", "몰라") 절대 따라서 반말 쓰지 말고 네 존댓말 톤을 계속 유지해.'
+
+// realtimeInstructions.ts의 "재정향(3단계, 반드시 수행)" 지시가 system prompt에만
+// 있으면 대화가 몇 턴 이어지는 순간 모델이 놓치거나(gpt-realtime-mini라 특히)
+// 구체적인 plan 대신 뭉뚱그린 질문으로 대체해버리는 문제를 실측으로 확인했다
+// (예: "농구화 사기"를 전혀 언급 안 하고 "다른 계획 있어?"로 퉁침, 사용자가
+// 끊겠다고 해도 plan 언급 없이 그냥 인사만 하고 끝냄). TONE_REMINDER와 같은
+// 방식으로 매 턴마다 구체적인 plan 문구를 직접 박아 넣어 상기시켜 신뢰도를 높인다.
+function buildPlanReminder(plan) {
+  if (!plan) return ''
+  return `\n\n[내부 지시 — 사용자에게 보이지 않음] 사용자가 요즘 하려는 일: "${plan}". 이 통화에서 이걸 단 한 번도 언급한 적이 없다면, 이번 응답이나 다음 응답에서 반드시 가볍게 물어봐("저번에 말한 ○○ 어떻게 됐어?" 식으로) — 뭉뚱그려서 "다른 계획 있어?"처럼 묻지 말고 반드시 위 구체적인 내용으로.
+이미 한 번 언급했는데 사용자가 힘들다/어렵다/괴롭다/짜증난다 같은 부정적 감정을 보였다면, 절대 다시 캐묻지 말고 먼저 공감·위로부터 해(다독여주는 톤) — 그 다음에야 딱 한 번, 아까와 다른 부드러운 말투로 살짝만 다시 챙겨봐("천천히 해도 되니까 조금이라도 해볼 수 있겠어요?" 식으로). 이 부드러운 재시도에도 "됐어요"/"말고"/"그만 물어봐요" 같은 거부 신호가 오면 그 뒤로는 절대 다시 꺼내지 마.
+이미 (최초 질문 + 부드러운 재시도) 두 번 다 다뤘거나, 사용자가 거부 신호를 보였다면, 그 이후로는 절대 다시 묻거나 언급하지 말고 그냥 자연스럽게 흘러가.`
+}
 
 // <audio> 기본 volume은 1.0(최대)이라 안드로이드에서 AI 음성이 과도하게 크게
 // 들리는 원인 중 하나였다. 소프트웨어 단에서 크게 낮춰 재생한다 — 다만
@@ -16,9 +25,29 @@ const TONE_REMINDER =
 // 오디오 스트림으로 라우팅되는 문제 자체를 고치진 못한다(아래 pc.ontrack 주석 참고).
 const DEFAULT_PLAYBACK_VOLUME = 0.4
 
+async function readClientSecret(res) {
+  if (res.status === 429) throw new Error('busy')
+  if (!res.ok) throw new Error('session')
+  const data = await res.json().catch(() => null)
+  if (!data?.client_secret) throw new Error('session')
+  return data.client_secret
+}
+
+function postSdpOffer(clientSecret, sdp) {
+  return fetch('https://api.openai.com/v1/realtime/calls', {
+    method: 'POST',
+    body: sdp,
+    headers: {
+      Authorization: `Bearer ${clientSecret}`,
+      'Content-Type': 'application/sdp',
+    },
+  })
+}
+
 const ERROR_MESSAGES = {
-  network: '통화 서버에 연결할 수 없어요. 네트워크를 확인해주세요.',
+  network: '접속 인원이 많아 연결에 실패했어요.\n잠시만 기다린 후에 시도해주세요.',
   session: '통화를 시작할 수 없어요. 잠시 후 다시 시도해주세요.',
+  busy: '접속 인원이 많아 연결에 실패했어요.\n조금만 기다린 후에 시도해주세요.',
   mic: '마이크 권한이 필요해요. 브라우저 설정에서 허용해주세요.',
   webrtc: '통화 연결에 실패했어요. 다시 시도해주세요.',
 }
@@ -47,6 +76,23 @@ export default function useRealtimeCall() {
   const currentAiIndexRef = useRef(null)
   const startedRef = useRef(false)
   const responseInFlightRef = useRef(false)
+  const micMutedByUserRef = useRef(false)
+  const planRef = useRef('')
+  // 연결 직후 첫 인사(첫 response) 도중엔 마이크를 아예 죽여둔다. 원격 오디오
+  // 트랙이 막 붙은 시점엔 브라우저 에코 캔슬레이션이 그 트랙을 레퍼런스로
+  // 잡기 전이라, AI 목소리가 마이크로 살짝 새어 들어가 서버 VAD가 "사용자가
+  // 끼어들었다"고 오인 → interrupt_response:true로 응답을 취소 → 곧장 새
+  // response.create가 나가면서 "말하다 끊기고 다시 시작"하는 것처럼 들리는
+  // 문제가 있었다. 첫 응답이 끝날 때까지만 무음으로 보내 이 오탐을 원천 차단.
+  const isFirstResponseRef = useRef(true)
+  const micSuppressedForGreetingRef = useRef(true)
+
+  const syncMicTrackEnabled = useCallback(() => {
+    const enabled = !micMutedByUserRef.current && !micSuppressedForGreetingRef.current
+    micStreamRef.current?.getAudioTracks().forEach((track) => {
+      track.enabled = enabled
+    })
+  }, [])
 
   const handleEvent = useCallback((event) => {
     switch (event.type) {
@@ -68,6 +114,12 @@ export default function useRealtimeCall() {
           event.response?.id,
         )
         responseInFlightRef.current = false
+        if (isFirstResponseRef.current) {
+          // 첫 응답(인사)이 끝났으니 억지로 죽여뒀던 마이크를 정상 상태로 돌린다.
+          isFirstResponseRef.current = false
+          micSuppressedForGreetingRef.current = false
+          syncMicTrackEnabled()
+        }
         if (cancelled) {
           // 잘려나간 AI 말풍선을 그대로 두면 영영 done:false로 남으니 마무리 처리.
           setTranscript((prev) => {
@@ -129,7 +181,7 @@ export default function useRealtimeCall() {
               item: {
                 type: 'message',
                 role: 'system',
-                content: [{ type: 'input_text', text: TONE_REMINDER }],
+                content: [{ type: 'input_text', text: TONE_REMINDER + buildPlanReminder(planRef.current) }],
               },
             }),
           )
@@ -145,7 +197,7 @@ export default function useRealtimeCall() {
       default:
         break
     }
-  }, [])
+  }, [syncMicTrackEnabled])
 
   const teardown = useCallback(() => {
     dcRef.current?.close()
@@ -259,40 +311,39 @@ export default function useRealtimeCall() {
       setErrorMessage('')
 
       try {
-        const headers = { 'Content-Type': 'application/json' }
-        if (APP_SECRET) headers['x-app-secret'] = APP_SECRET
-
-        let sessionRes
-        try {
-          sessionRes = await fetch(`${API_BASE}/api/call`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              interests: onboarding.interests ?? [],
-              plan: onboarding.plan ?? '',
-              personaId: onboarding.personaId,
-              previousSummary: onboarding.previousSummary || undefined,
-            }),
-          })
-        } catch {
-          throw new Error('network')
+        const payload = {
+          interests: onboarding.interests ?? [],
+          plan: onboarding.plan ?? '',
+          personaId: onboarding.personaId,
+          previousSummary: onboarding.previousSummary || undefined,
         }
+        planRef.current = payload.plan
 
-        if (!sessionRes.ok) throw new Error('session')
+        // 홈 화면에 머무는 동안 미리 받아둔 세션이 있으면 그걸 쓰고,
+        // 없으면 지금 발급받는다 — 어느 쪽이든 마이크 캡처와 동시에 진행해
+        // (둘은 서로 결과가 필요 없는 독립적인 작업이라) 순서대로 기다리며
+        // 낭비하던 시간을 없앤다.
+        const prefetched = takePrefetchedSession(payload)
+        const sessionPromise = prefetched
+          ? Promise.resolve(prefetched.clientSecret)
+          : fetchCallSession(payload)
+              .catch(() => {
+                throw new Error('network')
+              })
+              .then(readClientSecret)
 
-        const data = await sessionRes.json().catch(() => null)
-        const clientSecret = data?.client_secret
-        if (!clientSecret) throw new Error('session')
-
-        let micStream
-        try {
-          micStream = await navigator.mediaDevices.getUserMedia({
+        const micPromise = navigator.mediaDevices
+          .getUserMedia({
             audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
           })
-        } catch {
-          throw new Error('mic')
-        }
+          .catch(() => {
+            throw new Error('mic')
+          })
+
+        const [initialClientSecret, micStream] = await Promise.all([sessionPromise, micPromise])
+        let clientSecret = initialClientSecret
         micStreamRef.current = micStream
+        syncMicTrackEnabled() // 첫 인사가 끝나기 전까진 무음으로 보냄
 
         const pc = new RTCPeerConnection()
         pcRef.current = pc
@@ -339,19 +390,23 @@ export default function useRealtimeCall() {
 
         let sdpRes
         try {
-          sdpRes = await fetch('https://api.openai.com/v1/realtime/calls', {
-            method: 'POST',
-            body: offer.sdp,
-            headers: {
-              Authorization: `Bearer ${clientSecret}`,
-              'Content-Type': 'application/sdp',
-            },
-          })
+          sdpRes = await postSdpOffer(clientSecret, offer.sdp)
         } catch {
-          throw new Error('webrtc')
+          sdpRes = null
         }
 
-        if (!sdpRes.ok) throw new Error('webrtc')
+        // 미리 받아둔 세션은 홈 화면에 오래 머문 사이 만료됐을 수 있다 —
+        // 그런 경우에 한해 새로 발급받아 한 번만 재시도한다.
+        if ((!sdpRes || !sdpRes.ok) && prefetched) {
+          try {
+            clientSecret = await fetchCallSession(payload).then(readClientSecret)
+            sdpRes = await postSdpOffer(clientSecret, offer.sdp)
+          } catch {
+            sdpRes = null
+          }
+        }
+
+        if (!sdpRes || !sdpRes.ok) throw new Error('webrtc')
 
         const answerSdp = await sdpRes.text()
         await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp })
@@ -363,7 +418,7 @@ export default function useRealtimeCall() {
         setStatus('error')
       }
     },
-    [handleEvent, teardown, speakerBoost, applyAudioRoute],
+    [handleEvent, teardown, speakerBoost, applyAudioRoute, syncMicTrackEnabled],
   )
 
   const retry = useCallback(
@@ -371,18 +426,22 @@ export default function useRealtimeCall() {
       startedRef.current = false
       currentAiIndexRef.current = null
       responseInFlightRef.current = false
+      isFirstResponseRef.current = true
+      micSuppressedForGreetingRef.current = true
       setTranscript([])
       connect(onboarding)
     },
     [connect],
   )
 
-  const setMuted = useCallback((next) => {
-    setMutedState(next)
-    micStreamRef.current?.getAudioTracks().forEach((track) => {
-      track.enabled = !next
-    })
-  }, [])
+  const setMuted = useCallback(
+    (next) => {
+      setMutedState(next)
+      micMutedByUserRef.current = next
+      syncMicTrackEnabled()
+    },
+    [syncMicTrackEnabled],
+  )
 
   const setSpeakerBoost = useCallback(
     (next) => {

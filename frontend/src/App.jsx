@@ -5,17 +5,21 @@ import Home from './pages/Home'
 import Log from './pages/Log'
 import Report from './pages/Report'
 import Settings from './pages/Settings'
-import RoutineManage from './pages/RoutineManage'
 import AppManage from './pages/AppManage'
+import ProfileEdit from './pages/ProfileEdit'
 import CallSplash from './pages/CallSplash'
+import DemoExperience from './pages/DemoExperience'
 import { getApp } from './apps'
 import { getPersona, DEFAULT_PERSONA_ID } from './personas'
 import { loadState, saveState } from './lib/storage'
+import { saveProfile } from './lib/api'
+import { prefetchCallSession } from './lib/callSession'
+import { showCallNotification } from './lib/notify'
+import { fetchNotificationPreviewText } from './lib/push'
 import useAwayMonitor from './hooks/useAwayMonitor'
 
 const initial = loadState()
 const TABS = ['home', 'log', 'report', 'settings']
-const ROUTINE_PALETTE = ['#ff9090', '#511010', '#282c47', '#cbe291', '#586deb', '#b190ea', '#f6c453', '#4fd1c5']
 
 function hasCallDeepLink() {
   if (typeof window === 'undefined') return false
@@ -55,6 +59,31 @@ export default function App() {
   const app = useMemo(() => getApp(soonestApp?.appId), [soonestApp])
   const persona = useMemo(() => getPersona(soonestApp?.personaId), [soonestApp])
 
+  // 서버 쪽 메모리(userid 기반 KV)를 관심사/계획/루틴/현재 페르소나가 바뀔 때마다
+  // 최신 상태로 동기화한다 — 통화 프롬프트 백필과 푸시 알림 문구 생성이 이걸 읽는다.
+  // 실패해도(오프라인 등) 조용히 무시됨(lib/api.js) — localStorage가 항상 안전망.
+  useEffect(() => {
+    if (!profile.onboarded) return
+    saveProfile({
+      interests: profile.interests,
+      plan: profile.plan,
+      personaId: soonestApp?.personaId,
+    })
+  }, [profile.onboarded, profile.interests, profile.plan, soonestApp?.personaId])
+
+  // 홈 화면에 머무는 동안 통화 세션을 미리 하나 받아둔다 — 실제로 전화
+  // 버튼을 누르는 순간 /api/call 왕복을 기다리지 않도록 하기 위함
+  // (useRealtimeCall.connect 참고). 관심사/계획/페르소나가 바뀌면 다시 받는다.
+  useEffect(() => {
+    if (screen !== 'home' || !soonestApp) return
+    prefetchCallSession({
+      interests: profile.interests,
+      plan: profile.plan,
+      personaId: persona.id,
+      previousSummary: profile.previousSummary,
+    })
+  }, [screen, profile.interests, profile.plan, profile.previousSummary, soonestApp, persona.id])
+
   const handleOnboardingComplete = (data) => {
     setProfile((prev) => ({
       ...prev,
@@ -71,22 +100,6 @@ export default function App() {
 
   const addCallLog = (entry) =>
     setProfile((prev) => ({ ...prev, callLog: [entry, ...prev.callLog] }))
-
-  const addRoutine = (label) =>
-    setProfile((prev) => ({
-      ...prev,
-      routines: [
-        ...prev.routines,
-        {
-          id: crypto.randomUUID(),
-          label,
-          color: ROUTINE_PALETTE[prev.routines.length % ROUTINE_PALETTE.length],
-        },
-      ],
-    }))
-
-  const removeRoutine = (id) =>
-    setProfile((prev) => ({ ...prev, routines: prev.routines.filter((r) => r.id !== id) }))
 
   const addApp = (appId) =>
     setProfile((prev) => ({
@@ -117,7 +130,12 @@ export default function App() {
   // "다른 앱 사용 시간"은 브라우저가 알 수 없어서, 이 앱을 벗어나 있던
   // 시간을 근사치로 쓴다 — 통화 중/온보딩 중에는 재트리거되지 않게 막는다.
   const { awaySeconds } = useAwayMonitor({
-    enabled: profile.onboarded && soonestApp !== null && screen !== 'onboarding' && screen !== 'callSplash',
+    enabled:
+      profile.onboarded &&
+      soonestApp !== null &&
+      screen !== 'onboarding' &&
+      screen !== 'callSplash' &&
+      screen !== 'demo',
     limitMinutes: soonestApp?.limitMinutes ?? 45,
     personaName: persona.name,
     onThresholdReached: () => setScreen('callSplash'),
@@ -152,11 +170,35 @@ export default function App() {
         <Home
           app={app}
           monitoredApps={profile.apps}
-          routines={profile.routines}
+          interests={profile.interests}
+          plan={profile.plan}
           awaySeconds={awaySeconds}
           onManageApps={() => setScreen('appManage')}
-          onManageRoutines={() => setScreen('routines')}
+          onEditProfile={() => setScreen('profileEdit')}
+          // 발표 데모용 — 실제 away 타이머/서버 push를 기다리지 않고 벨 아이콘
+          // 탭 한 번으로 통화 알림 배너를 바로 보여준다(팀 결정: 현장에선 실제
+          // 푸시 배달을 신뢰할 수 없어 데모는 이 로컬 알림 경로로만 시연).
+          // 온보딩에서 알림 허용을 안 눌렀던 세션이면 permission이 'default'라
+          // showCallNotification이 조용히 실패하므로, 벨 클릭(=사용자 제스처)
+          // 시점에 권한이 없으면 여기서 바로 요청부터 한다.
+          onDemoNotification={async () => {
+            if (typeof Notification === 'undefined') return
+            if (Notification.permission === 'default') {
+              await Notification.requestPermission()
+            }
+            const text = await fetchNotificationPreviewText()
+            showCallNotification(persona.name, text)
+          }}
+          onOpenDemoExperience={() => setScreen('demo')}
           {...tabProps}
+        />
+      )}
+
+      {screen === 'demo' && (
+        <DemoExperience
+          persona={persona}
+          onExit={() => setScreen('home')}
+          onTriggerCall={() => setScreen('callSplash')}
         />
       )}
 
@@ -170,15 +212,6 @@ export default function App() {
         />
       )}
 
-      {screen === 'routines' && (
-        <RoutineManage
-          routines={profile.routines}
-          onAdd={addRoutine}
-          onRemove={removeRoutine}
-          onBack={() => setScreen('home')}
-        />
-      )}
-
       {screen === 'log' && <Log callLog={profile.callLog} {...tabProps} />}
 
       {screen === 'report' && <Report callLog={profile.callLog} {...tabProps} />}
@@ -186,8 +219,21 @@ export default function App() {
       {screen === 'settings' && (
         <Settings
           monitoredApps={profile.apps}
+          interests={profile.interests}
+          plan={profile.plan}
           onManageApps={() => setScreen('appManage')}
+          onEditProfile={() => setScreen('profileEdit')}
           {...tabProps}
+        />
+      )}
+
+      {screen === 'profileEdit' && (
+        <ProfileEdit
+          interests={profile.interests}
+          plan={profile.plan}
+          onChangeInterests={(interests) => updateProfile({ interests })}
+          onChangePlan={(plan) => updateProfile({ plan })}
+          onBack={() => setScreen('settings')}
         />
       )}
     </PhoneFrame>

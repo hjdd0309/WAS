@@ -53,7 +53,7 @@ export default function Log({ callLog, onNavigate, onCallPress }) {
   const weekSeconds = recent.reduce((sum, e) => sum + e.durationSeconds, 0)
 
   return (
-    <div className="flex h-full w-full flex-col bg-black">
+    <div className="flex h-full w-full flex-col bg-[#1b171c]">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <ScreenHeader title="기록" subtitle="위스피와 나눈 대화들이에요" />
 

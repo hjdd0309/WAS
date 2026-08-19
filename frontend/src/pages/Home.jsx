@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import BottomNav from '../components/BottomNav'
-import homeGreetingMascot from '../assets/illustrations/home-greeting-mascot.png'
+import homeGreetingMascot from '../assets/illustrations/ghost-image-1.png'
 import { getApp } from '../apps'
 import { getPersona } from '../personas'
 
@@ -14,12 +14,15 @@ function formatAway(seconds) {
 export default function Home({
   app,
   monitoredApps,
-  routines,
+  interests = [],
+  plan,
   awaySeconds = 0,
   onCallPress,
   onNavigate,
   onManageApps,
-  onManageRoutines,
+  onEditProfile,
+  onDemoNotification,
+  onOpenDemoExperience,
 }) {
   const [showAwayNotice, setShowAwayNotice] = useState(false)
 
@@ -31,16 +34,23 @@ export default function Home({
   }, [awaySeconds])
 
   return (
-    <div className="flex h-full w-full flex-col bg-black">
+    <div className="flex h-full w-full flex-col bg-[#1b171c]">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <div className="flex items-center justify-between">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
             <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
+          <button
+            type="button"
+            onClick={onDemoNotification}
+            aria-label="알림 미리보기 (데모)"
+            className="active:opacity-70"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </button>
         </div>
 
         {showAwayNotice && (
@@ -59,17 +69,26 @@ export default function Home({
               저와 잠깐 <span className="text-accent">다른 얘기</span> 해볼까요?
             </p>
           </div>
-          <div className="animate-float relative h-[130px] w-[115px] shrink-0 overflow-hidden rounded-2xl">
-            <img
-              src={homeGreetingMascot}
-              alt="위스피 마스코트"
-              className="absolute max-w-none h-[547.18%] w-[286.24%]"
-              style={{ left: '-144.30%', top: '-64.43%' }}
-            />
+          <div className="animate-float ml-3 flex h-[130px] w-[115px] shrink-0 items-center justify-center">
+            <img src={homeGreetingMascot} alt="위스피 마스코트" className="h-auto w-full" />
           </div>
         </div>
 
-        <div className="mt-6 rounded-[20px] border border-[#695b69]/60 bg-[#1d191d] p-4">
+        <button
+          type="button"
+          onClick={onOpenDemoExperience}
+          className="mt-6 flex w-full items-center justify-between rounded-[16px] bg-accent px-4 py-3.5 text-left active:opacity-70"
+        >
+          <div>
+            <p className="text-[14px] font-bold text-black">진짜처럼 체험해보기</p>
+            <p className="mt-0.5 text-[11px] text-black/60">인스타그램 쓰다가 전화 오는 걸 미리 볼 수 있어요</p>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
+        </button>
+
+        <div className="mt-4 rounded-[20px] border border-[#695b69]/60 bg-[#1d191d] p-4">
           <div className="flex items-center justify-between">
             <p className="text-[12px] text-white">지금 집중하고 있던 것</p>
             <span className="text-[11px] font-medium text-accent-soft">지금</span>
@@ -82,14 +101,6 @@ export default function Home({
               <p className="truncate text-[15px] font-semibold text-white">{app.name}</p>
               <p className="text-[12px] text-[#afafaf]">보고 계신 지 45분</p>
             </div>
-            <button
-              aria-label="바로가기"
-              className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[#635281] bg-black active:opacity-70"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -139,34 +150,58 @@ export default function Home({
           <div className="my-4 h-px bg-white/10" />
 
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold text-white">내 루틴 리스트</p>
+            <p className="text-[11px] font-semibold text-white">관심사</p>
             <button
-              onClick={onManageRoutines}
+              onClick={onEditProfile}
               className="text-[11px] font-medium text-accent-soft active:opacity-70"
             >
-              관리
+              수정
             </button>
           </div>
 
-          {routines.length === 0 ? (
-            <button
-              onClick={onManageRoutines}
-              className="mt-3 flex h-[60px] w-full items-center justify-center rounded-[10px] border border-dashed border-white/20 text-[12px] font-medium text-white/40 active:opacity-70"
-            >
-              + 루틴 추가하기
-            </button>
-          ) : (
-            <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
-              {routines.map((routine) => (
-                <div
-                  key={routine.id}
-                  className="flex h-[60px] w-14 shrink-0 flex-col items-center justify-center gap-1.5 rounded-[10px] bg-[#574a57]"
+          {interests.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {interests.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-accent/20 px-2.5 py-1 text-[13px] font-medium text-accent-soft"
                 >
-                  <span className="size-[22px] rounded-full" style={{ background: routine.color }} />
-                  <span className="px-1 text-center text-[8px] font-medium text-white">{routine.label}</span>
-                </div>
+                  {tag}
+                </span>
               ))}
             </div>
+          ) : (
+            <button
+              onClick={onEditProfile}
+              className="mt-3 flex h-[44px] w-full items-center justify-center rounded-[10px] border border-dashed border-white/20 text-[12px] font-medium text-white/40 active:opacity-70"
+            >
+              + 관심사 추가하기
+            </button>
+          )}
+
+          <div className="my-4 h-px bg-white/10" />
+
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold text-white">할 일</p>
+            <button
+              onClick={onEditProfile}
+              className="text-[11px] font-medium text-accent-soft active:opacity-70"
+            >
+              수정
+            </button>
+          </div>
+
+          {plan ? (
+            <p className="mt-3 rounded-[10px] bg-[#574a57] px-3.5 py-3 text-[13px] font-medium text-white">
+              {plan}
+            </p>
+          ) : (
+            <button
+              onClick={onEditProfile}
+              className="mt-3 flex h-[52px] w-full items-center justify-center rounded-[10px] border border-dashed border-white/20 text-[12px] font-medium text-white/40 active:opacity-70"
+            >
+              + 할 일 추가하기
+            </button>
           )}
         </div>
       </div>

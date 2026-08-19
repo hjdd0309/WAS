@@ -3,6 +3,8 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import swaggerUi from "swagger-ui-express";
 import { callRouter } from "./routes/call";
+import { profileRouter } from "./routes/profile";
+import { pushRouter } from "./routes/push";
 import { openApiSpec } from "./swagger";
 import { requireAppSecret } from "./appSecret";
 
@@ -31,9 +33,23 @@ export function createApp() {
     res.status(200).json({ ok: true });
   });
 
+  // 부스 시연은 방문객들이 대부분 같은 와이파이(=같은 외부 IP)를 공유해서,
+  // 짧은 시간에 여러 명이 연달아 통화를 시도하면 OpenAI 쪽 한도보다 이 리밋에
+  // 먼저 걸릴 수 있다(#14) — 비용 가드레일 목적은 유지하되 부스 트래픽을
+  // 감당할 수 있게 완화.
   const callLimiter = rateLimit({
     windowMs: 60_000,
-    limit: 10,
+    limit: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  // 프로필 저장/알림 문구 미리보기는 OpenAI 비용이 거의 없는 nano 모델 호출이라
+  // (설정 화면 저장, 알림 문구 데모 버튼 등에서 자주 호출될 수 있음), call과 같은
+  // 엄격한 리밋을 걸면 정상 사용/시연도 막힐 수 있어 훨씬 널널하게 둔다.
+  const profileLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: 300,
     standardHeaders: true,
     legacyHeaders: false,
   });
@@ -42,6 +58,8 @@ export function createApp() {
   // guardrail (rate limit) and a barrier against random URL scanners
   // (shared secret) — CORS alone doesn't cover non-browser callers.
   app.use("/api", callLimiter, requireAppSecret, callRouter);
+  app.use("/api", profileLimiter, requireAppSecret, profileRouter);
+  app.use("/api", profileLimiter, requireAppSecret, pushRouter);
 
   return app;
 }

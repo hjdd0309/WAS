@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import BottomNav from '../components/BottomNav'
 import ScreenHeader from '../components/ScreenHeader'
+import HomeScreenInstallCard from '../components/HomeScreenInstallCard'
+import NotificationPermissionCard from '../components/NotificationPermissionCard'
 
 function Toggle({ checked, onChange }) {
   return (
@@ -43,12 +45,11 @@ function Row({ label, right, onClick }) {
   )
 }
 
-export default function Settings({ monitoredApps, onManageApps, onNavigate, onCallPress }) {
-  const [notif, setNotif] = useState(true)
+export default function Settings({ monitoredApps, interests, plan, onManageApps, onEditProfile, onNavigate, onCallPress }) {
   const [sound, setSound] = useState(true)
 
   return (
-    <div className="flex h-full w-full flex-col bg-black">
+    <div className="flex h-full w-full flex-col bg-[#1b171c]">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
         <ScreenHeader title="설정" subtitle="잠깐만을 나에게 맞게 조정해요" />
 
@@ -67,8 +68,27 @@ export default function Settings({ monitoredApps, onManageApps, onNavigate, onCa
           <Chevron />
         </button>
 
+        <button
+          onClick={onEditProfile}
+          className="mt-3 flex w-full items-center justify-between rounded-[20px] border border-[#695b69]/60 bg-[#1d191d] p-5 text-left active:opacity-70"
+        >
+          <div>
+            <p className="text-[14px] font-semibold text-white">관심사·계획 수정</p>
+            <p className="mt-1 truncate text-[12px] text-[#919191]">
+              {interests.length === 0 && !plan
+                ? '아직 입력한 내용이 없어요'
+                : [interests.join(', '), plan].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+          <Chevron />
+        </button>
+
+        <div className="mt-4 flex flex-col gap-3">
+          <HomeScreenInstallCard />
+          <NotificationPermissionCard />
+        </div>
+
         <div className="mt-4 divide-y divide-white/10 overflow-hidden rounded-[20px] border border-[#695b69]/60 bg-[#1d191d]">
-          <Row label="알림" right={<Toggle checked={notif} onChange={setNotif} />} />
           <Row label="사운드" right={<Toggle checked={sound} onChange={setSound} />} />
           <Row label="다크 모드" right={<span className="text-[12px] text-[#919191]">항상 켜짐</span>} />
         </div>

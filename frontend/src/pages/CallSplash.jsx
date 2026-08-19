@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import useRealtimeCall from '../hooks/useRealtimeCall'
+import { postJson } from '../lib/api'
+import CallGate from './call/CallGate'
 import CallConnecting from './call/CallConnecting'
 import CallActive from './call/CallActive'
 import CallSummaryScreen from './call/CallSummaryScreen'
@@ -39,12 +41,6 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
   }
 
   useEffect(() => {
-    call.connect(callPayload)
-    // 마운트 시 한 번만 연결을 시작한다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
     if (call.status === 'connected' && !startedAtRef.current) {
       startedAtRef.current = Date.now()
     }
@@ -55,7 +51,9 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
       ? Math.floor((Date.now() - startedAtRef.current) / 1000)
       : 0
     setDuration(finalDuration)
-    onSaveSummary?.(deriveSummary(call.transcript))
+    const summary = deriveSummary(call.transcript)
+    onSaveSummary?.(summary)
+    postJson('/api/call/summary', { summary })
     onLogCall?.({
       id: crypto.randomUUID(),
       timestamp: Date.now(),
@@ -68,6 +66,7 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
   }
 
   const handleRetry = () => call.retry(callPayload)
+  const handleSlideToAnswer = () => call.connect(callPayload)
 
   if (call.status === 'connected') {
     return (
@@ -87,10 +86,15 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
     return <CallSummaryScreen app={app} persona={persona} duration={duration} onHome={onHome} />
   }
 
+  if (call.status === 'idle') {
+    return <CallGate persona={persona} onSlide={handleSlideToAnswer} />
+  }
+
   return (
     <CallConnecting
       status={call.status}
       errorMessage={call.errorMessage}
+      persona={persona}
       onRetry={handleRetry}
       onCancel={onHome}
     />

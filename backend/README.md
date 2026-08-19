@@ -44,7 +44,7 @@ npm run dev
 이 서버는 상태 없이 짧은 요청만 처리하므로 Vercel Serverless Functions에 그대로 올라간다.
 
 1. 이 `backend/` 폴더를 별도 Vercel 프로젝트로 연결 (Root Directory를 `backend`로 지정).
-2. 환경변수에 `OPENAI_API_KEY`, `REALTIME_MODEL`, `REALTIME_VOICE`, `FRONTEND_ORIGIN`(프론트 배포 origin), `APP_SHARED_SECRET` 설정.
+2. 환경변수에 `OPENAI_API_KEY`, `REALTIME_VOICE`, `FRONTEND_ORIGIN`(프론트 배포 origin), `APP_SHARED_SECRET` 설정. (모델은 gpt-realtime-mini/gpt-4.1-nano로 코드에 고정돼 있어 별도 설정 불필요)
 3. 배포하면 `api/index.ts`가 Express 앱을 서버리스 함수로 노출하고, `vercel.json`의 rewrite가 모든 요청을 그 함수로 보낸다.
 4. Hobby 플랜은 무료지만 함수 실행시간이 기본 10초로 제한된다. 이 서버는 짧은 토큰 발급 요청만 처리하므로 문제없다.
 
