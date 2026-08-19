@@ -69,7 +69,7 @@ export default function Home({
               저와 잠깐 <span className="text-accent">다른 얘기</span> 해볼까요?
             </p>
           </div>
-          <div className="animate-float ml-3 flex h-[130px] w-[115px] shrink-0 items-center justify-center">
+          <div className="animate-float mt-4 ml-3 flex h-[150px] w-[135px] shrink-0 items-center justify-center">
             <img src={homeGreetingMascot} alt="위스피 마스코트" className="h-auto w-full" />
           </div>
         </div>
