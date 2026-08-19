@@ -62,7 +62,7 @@ export default function Home({
         <div className="mt-5 flex items-start justify-start gap-5">
           <div className="pl-3">
             <p className="text-[15px] text-[#b9b9b9]">안녕하세요,</p>
-            <p className="mt-1 text-[26px] font-bold text-white">잠깐만요!</p>
+            <p className="mt-1 whitespace-nowrap text-[28px] font-bold text-white">잠깐만요!</p>
             <p className="mt-3 max-w-[180px] text-[13px] leading-[1.6] text-[#b9b9b9]">
               정신없이 이어진 화면의 흐름,
               <br />
