@@ -26,6 +26,11 @@ function buildPlanReminder(plan) {
 // 오디오 스트림으로 라우팅되는 문제 자체를 고치진 못한다(아래 pc.ontrack 주석 참고).
 const DEFAULT_PLAYBACK_VOLUME = 0.4
 
+// end_call 함수 호출이 감지된 뒤 실제로 aiEnded를 켜기까지 주는 여유 시간.
+// 함수 호출 자체는 마무리 인사 오디오가 아직 재생 중일 때 먼저 도착할 수
+// 있어서, 마지막 인사가 끊기지 않게 재생이 끝날 시간을 벌어준다.
+const END_CALL_AUDIO_TAIL_MS = 1200
+
 async function readClientSecret(res) {
   if (res.status === 429) throw new Error('busy')
   if (!res.ok) throw new Error('session')
@@ -66,6 +71,10 @@ export default function useRealtimeCall() {
   const [aiSpeaking, setAiSpeaking] = useState(false)
   const [muted, setMutedState] = useState(false)
   const [speakerBoost, setSpeakerBoostState] = useState(false)
+  // AI가 end_call 함수를 호출해 스스로 통화를 마치겠다는 뜻을 밝혔음을
+  // 호출부(CallSplash)에 알리는 신호. 실제 hangup()은 호출부가 통화 기록
+  // 저장 등 자기 책임을 마친 뒤 이 신호를 보고 직접 트리거한다.
+  const [aiEnded, setAiEnded] = useState(false)
 
   const pcRef = useRef(null)
   const micStreamRef = useRef(null)
@@ -87,6 +96,7 @@ export default function useRealtimeCall() {
   // 문제가 있었다. 첫 응답이 끝날 때까지만 무음으로 보내 이 오탐을 원천 차단.
   const isFirstResponseRef = useRef(true)
   const micSuppressedForGreetingRef = useRef(true)
+  const aiEndRequestedRef = useRef(false)
 
   const syncMicTrackEnabled = useCallback(() => {
     const enabled = !micMutedByUserRef.current && !micSuppressedForGreetingRef.current
@@ -131,6 +141,19 @@ export default function useRealtimeCall() {
           })
           currentAiIndexRef.current = null
           setAiSpeaking(false)
+        }
+        if (aiEndRequestedRef.current) {
+          aiEndRequestedRef.current = false
+          console.log('[realtime] end_call 반영 — 마무리 인사 재생 여유를 준 뒤 통화 종료 신호를 올림')
+          setTimeout(() => setAiEnded(true), END_CALL_AUDIO_TAIL_MS)
+        }
+        break
+      }
+      case 'response.output_item.done': {
+        const item = event.item
+        if (item?.type === 'function_call' && item?.name === 'end_call') {
+          console.log('[realtime] end_call 함수 호출 감지 — AI가 통화 종료를 요청함')
+          aiEndRequestedRef.current = true
         }
         break
       }
@@ -429,6 +452,8 @@ export default function useRealtimeCall() {
       responseInFlightRef.current = false
       isFirstResponseRef.current = true
       micSuppressedForGreetingRef.current = true
+      aiEndRequestedRef.current = false
+      setAiEnded(false)
       setTranscript([])
       connect(onboarding)
     },
@@ -459,6 +484,7 @@ export default function useRealtimeCall() {
     aiSpeaking,
     muted,
     speakerBoost,
+    aiEnded,
     connect,
     retry,
     hangup,

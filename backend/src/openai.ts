@@ -56,6 +56,18 @@ export async function createCallSession(
           type: "realtime",
           model,
           instructions,
+          // realtimeInstructions.ts가 지시하는 "마무리 인사 직후 통화 종료" 시점을
+          // AI가 직접 알려주는 유일한 통로. 클라이언트(useRealtimeCall.js)가 이
+          // 함수 호출을 감지하면 마지막 인사가 재생될 시간을 준 뒤 자동으로 hangup.
+          tools: [
+            {
+              type: "function",
+              name: "end_call",
+              description:
+                "마무리 인사를 다 말한 직후, 통화를 실제로 종료할 때 호출해. 다른 말 없이 이 함수만 호출하면 돼.",
+              parameters: { type: "object", properties: {}, additionalProperties: false },
+            },
+          ],
           audio: {
             output: { voice },
             input: {

@@ -75,6 +75,14 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
 
   const handleRetry = () => call.retry(callPayload)
 
+  // AI가 end_call 함수를 호출해 스스로 통화를 마쳤다는 신호(call.aiEnded)를
+  // 보내오면, 사용자가 종료 버튼을 눌렀을 때와 똑같은 경로(handleHangup)로
+  // 통화 기록 저장/요약까지 챙기고 마친다.
+  useEffect(() => {
+    if (call.aiEnded) handleHangup()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [call.aiEnded])
+
   if (call.status === 'connected') {
     return (
       <CallActive
