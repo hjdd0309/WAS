@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import useRealtimeCall from '../hooks/useRealtimeCall'
 import { postJson } from '../lib/api'
-import CallGate from './call/CallGate'
 import CallConnecting from './call/CallConnecting'
 import CallActive from './call/CallActive'
 import CallSummaryScreen from './call/CallSummaryScreen'
@@ -46,6 +45,15 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
     }
   }, [call.status])
 
+  // "밀어서 대화하기" 게이트 없이, 실제 전화를 받는 순간처럼 화면 진입과
+  // 동시에 바로 연결을 시작한다 — 스와이프 한 번이 핸드셰이크 시작을 뒤로
+  // 미뤄서 체감 연결 속도를 떨어뜨렸던 문제(connect()는 idle 상태에서 한
+  // 번만 걸리도록 useRealtimeCall 내부에서 막아둠).
+  useEffect(() => {
+    if (call.status === 'idle') call.connect(callPayload)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [call.status])
+
   const handleHangup = () => {
     const finalDuration = startedAtRef.current
       ? Math.floor((Date.now() - startedAtRef.current) / 1000)
@@ -66,7 +74,6 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
   }
 
   const handleRetry = () => call.retry(callPayload)
-  const handleSlideToAnswer = () => call.connect(callPayload)
 
   if (call.status === 'connected') {
     return (
@@ -86,13 +93,9 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
     return <CallSummaryScreen app={app} persona={persona} duration={duration} onHome={onHome} />
   }
 
-  if (call.status === 'idle') {
-    return <CallGate persona={persona} onSlide={handleSlideToAnswer} />
-  }
-
   return (
     <CallConnecting
-      status={call.status}
+      status={call.status === 'idle' ? 'connecting' : call.status}
       errorMessage={call.errorMessage}
       persona={persona}
       onRetry={handleRetry}
