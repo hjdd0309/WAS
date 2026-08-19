@@ -62,14 +62,14 @@ export default function Home({
         <div className="mt-5 flex items-start justify-start gap-5">
           <div className="pl-3">
             <p className="text-[15px] text-[#b9b9b9]">안녕하세요,</p>
-            <p className="mt-1 text-[28px] font-bold text-white">잠깐만요!</p>
+            <p className="mt-1 text-[26px] font-bold text-white">잠깐만요!</p>
             <p className="mt-3 max-w-[180px] text-[13px] leading-[1.6] text-[#b9b9b9]">
               정신없이 이어진 화면의 흐름,
               <br />
               저와 잠깐 <span className="text-accent">다른 얘기</span> 해볼까요?
             </p>
           </div>
-          <div className="animate-float ml-3 flex h-[130px] w-[115px] shrink-0 items-center justify-center">
+          <div className="animate-float mt-4 ml-3 flex h-[150px] w-[135px] shrink-0 items-center justify-center">
             <img src={homeGreetingMascot} alt="위스피 마스코트" className="h-auto w-full" />
           </div>
         </div>

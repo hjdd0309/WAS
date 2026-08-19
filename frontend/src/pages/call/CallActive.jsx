@@ -148,7 +148,7 @@ export default function CallActive({ persona, aiSpeaking, muted, speakerOn, onTo
         </p>
       </div>
 
-      <div className="mt-8 flex justify-center">
+      <div className="mt-2 flex justify-center">
         <img
           src={wispyMascot}
           alt={persona.name}

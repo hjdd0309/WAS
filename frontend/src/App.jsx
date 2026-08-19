@@ -9,6 +9,7 @@ import AppManage from './pages/AppManage'
 import ProfileEdit from './pages/ProfileEdit'
 import CallSplash from './pages/CallSplash'
 import DemoExperience from './pages/DemoExperience'
+import CallActive from './pages/call/CallActive'
 import { getApp } from './apps'
 import { getPersona, DEFAULT_PERSONA_ID } from './personas'
 import { loadState, saveState } from './lib/storage'
@@ -26,11 +27,19 @@ function hasCallDeepLink() {
   return new URLSearchParams(window.location.search).get('call') === '1'
 }
 
+// 실제 WebRTC 연결 없이 통화 중 화면(레이아웃/스타일)만 바로 확인하기 위한
+// QA용 진입점 — 개발 빌드에서만 활성화된다. ?debug=call-active 로 접속.
+function hasDebugCallActive() {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('debug') === 'call-active'
+}
+
 export default function App() {
   // screen: 지금 보여줄 화면. 온보딩을 마치기 전엔 항상 onboarding부터 시작한다.
   // 초기화 함수는 순수하게 "읽기"만 한다 — StrictMode(개발 모드)에서 두 번 호출돼도
   // 안전하도록, URL을 지우는 부수효과는 아래 별도 useEffect로 뺐다.
   const [screen, setScreen] = useState(() => {
+    if (hasDebugCallActive()) return 'debugCallActive'
     if (initial.onboarded && hasCallDeepLink()) return 'callSplash'
     return initial.onboarded ? 'home' : 'onboarding'
   })
@@ -154,6 +163,18 @@ export default function App() {
     // 제스처는 항상 꺼두고, 각 화면 자체의 종료 버튼(취소/통화종료/홈으로)만 쓴다.
     <PhoneFrame>
       {screen === 'onboarding' && <Onboarding onComplete={handleOnboardingComplete} />}
+
+      {screen === 'debugCallActive' && (
+        <CallActive
+          persona={getPersona(DEFAULT_PERSONA_ID)}
+          aiSpeaking={false}
+          muted={false}
+          speakerOn={false}
+          onToggleMute={() => {}}
+          onToggleSpeaker={() => {}}
+          onHangup={() => setScreen('home')}
+        />
+      )}
 
       {screen === 'callSplash' && (
         <CallSplash
