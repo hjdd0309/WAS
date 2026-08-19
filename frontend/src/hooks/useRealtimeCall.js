@@ -43,7 +43,7 @@ function postSdpOffer(clientSecret, sdp) {
 }
 
 const ERROR_MESSAGES = {
-  network: '통화 서버에 연결할 수 없어요. 네트워크를 확인해주세요.',
+  network: '접속 인원이 많아 연결에 실패했어요.\n잠시만 기다린 후에 시도해주세요.',
   session: '통화를 시작할 수 없어요. 잠시 후 다시 시도해주세요.',
   busy: '접속 인원이 많아 연결에 실패했어요. 조금만 기다린 후에 시도해주세요.',
   mic: '마이크 권한이 필요해요. 브라우저 설정에서 허용해주세요.',

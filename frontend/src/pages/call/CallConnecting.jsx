@@ -16,7 +16,7 @@ export default function CallConnecting({ status, errorMessage, persona, onRetry,
             className="h-[130px] w-[127px] rounded-[34px] border border-[#444] object-cover shadow-[0_4px_20px_rgba(177,144,234,0.5)]"
           />
           <p className="text-[19px] font-bold text-white">연결에 실패했어요</p>
-          <p className="text-[14px] leading-[1.6] text-white/60">{errorMessage}</p>
+          <p className="whitespace-pre-line text-[14px] leading-[1.6] text-white/60">{errorMessage}</p>
         </div>
         <div className="flex w-full flex-col gap-3 px-6 pb-10">
           <button
