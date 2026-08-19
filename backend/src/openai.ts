@@ -70,6 +70,23 @@ export async function createCallSession(
               },
             },
           },
+          // 마무리 인사까지 마치면 AI가 스스로 통화를 종료하도록 하는 도구.
+          // 프롬프트(realtimeInstructions.ts)에서 "마무리 멘트 다음 차례에만
+          // 호출"하도록 지시한다. 클라이언트(useRealtimeCall.js)는 이 함수
+          // 호출 이벤트를 감지해서 hangup()을 실행한다.
+          tools: [
+            {
+              type: "function",
+              name: "end_call",
+              description:
+                "마무리 인사를 다 말한 다음 차례에, 통화를 실제로 종료할 때 호출해. 다른 말 없이 이 함수만 호출하면 돼.",
+              parameters: {
+                type: "object",
+                properties: {},
+                additionalProperties: false,
+              },
+            },
+          ],
         },
       }),
     });
