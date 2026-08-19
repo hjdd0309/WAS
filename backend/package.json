@@ -7,7 +7,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "test:prompt": "tsx scripts/test-prompt.ts",
-    "test:realtime": "tsx scripts/test-realtime-text.ts"
+    "test:realtime": "tsx scripts/test-realtime-text.ts",
+    "test:voice": "tsx scripts/test-voice-tone.ts"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.2",
