@@ -10,8 +10,19 @@ import OnboardingReady from './OnboardingReady'
 
 // 컨테이너 크기를 onboarding-composite.png 안 해당 카드의 실제 픽셀 크기와 동일하게 맞춰서
 // (1:1 스케일) 카드가 잘리지 않고 원본 그대로 보이게 한다.
-const STEP2_CROP = { containerW: 261, containerH: 402, w: '529.12%', h: '283.33%', left: '-151.34%', top: '-57.46%' }
-const STEP2_SLOT = { width: 261, height: 402 }
+// STEP2는 짧은 화면(예: 갤럭시 S8)에서 스크롤 없이 다 보이도록, 검증된 크롭 영역(좌상단
+// -395px/-231px 기준)을 그대로 유지한 채 0.72배로 균일 축소한다 — 카드가 화면에서 차지하는
+// 절대 크기만 줄고, 카드 안에서 보여주는 영역·비율은 이전과 완전히 동일하다.
+const STEP2_SCALE = 0.72
+const STEP2_CROP = {
+  containerW: Math.round(261 * STEP2_SCALE),
+  containerH: Math.round(402 * STEP2_SCALE),
+  w: `${Math.round(1381 * STEP2_SCALE)}px`,
+  h: `${Math.round(1139 * STEP2_SCALE)}px`,
+  left: `${Math.round(-395 * STEP2_SCALE)}px`,
+  top: `${Math.round(-231 * STEP2_SCALE)}px`,
+}
+const STEP2_SLOT = { width: STEP2_CROP.containerW, height: STEP2_CROP.containerH }
 const STEP3_CROP = { containerW: 250, containerH: 400, w: '443.69%', h: '228.71%', left: '-331.44%', top: '-36.75%' }
 const STEP3_SLOT = { width: 250, height: 400 }
 
