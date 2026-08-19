@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import wispyMascot from '../../assets/illustrations/ghost-image-1.png'
 
 function CallGateIcon() {
   return (
@@ -87,8 +86,12 @@ export default function CallGate({ persona, onSlide }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-10 bg-[#1b171c] px-8">
       <div className="flex flex-col items-center gap-6">
-        <div className="flex size-[210px] items-center justify-center">
-          <img src={wispyMascot} alt={persona?.name ?? '위스피'} className="h-auto w-[190px]" />
+        <div className="flex size-[210px] items-center justify-center overflow-hidden rounded-full bg-white/10 text-[100px]">
+          {persona?.image ? (
+            <img src={persona.image} alt="" className="size-[180px] object-contain" />
+          ) : (
+            persona?.emoji ?? '👻'
+          )}
         </div>
         <div className="flex flex-col items-center gap-2 text-center">
           <p className="text-[45px] font-extrabold leading-tight text-white">{persona?.name ?? '위스피'}</p>
