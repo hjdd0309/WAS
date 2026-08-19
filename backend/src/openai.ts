@@ -14,12 +14,26 @@ export interface CreateCallSessionError {
   message: string;
 }
 
+// gpt-realtime과 gpt-realtime-mini는 TPM(분당 토큰) 레이트리밋이 완전히
+// 분리된 별개 버킷이라는 걸 실측으로 확인함(Tier 1 기준 각각 40,000 TPM —
+// 합쳐서 80,000). 통화마다 랜덤으로 두 모델에 나눠 배정해서 사실상 그
+// 80,000을 다 쓴다 — mini는 음성 인식 정확도가 살짝 떨어진다는 피드백이
+// 있지만, 부스처럼 짧은 시간에 여러 통화가 몰릴 때 gpt-realtime 하나만
+// 쓰다 429(rate_limit_exceeded)로 아예 못 받는 것보다 낫다는 트레이드오프.
+const REALTIME_MODELS = ["gpt-realtime", "gpt-realtime-mini"];
+
+// REALTIME_MODEL 환경변수를 설정하면 분산을 끄고 그 모델로 고정한다 —
+// 특정 모델만 문제가 있을 때 재배포 없이 바로 우회할 수 있는 운영 비상용 스위치.
+function pickRealtimeModel(): string {
+  if (process.env.REALTIME_MODEL) return process.env.REALTIME_MODEL;
+  return REALTIME_MODELS[Math.floor(Math.random() * REALTIME_MODELS.length)];
+}
+
 export async function createCallSession(
   body: Partial<OnboardingData>,
 ): Promise<CreateCallSessionResult | CreateCallSessionError> {
   const apiKey = process.env.OPENAI_API_KEY;
-  // 비용/속도 때문에 무조건 mini 고정 — 환경변수로 바꿔 쓰지 못하게 함.
-  const model = "gpt-realtime-mini";
+  const model = pickRealtimeModel();
 
   if (!apiKey) {
     return { ok: false, status: 501, message: "OPENAI_API_KEY not configured" };
@@ -56,18 +70,6 @@ export async function createCallSession(
           type: "realtime",
           model,
           instructions,
-          // realtimeInstructions.ts가 지시하는 "마무리 인사 직후 통화 종료" 시점을
-          // AI가 직접 알려주는 유일한 통로. 클라이언트(useRealtimeCall.js)가 이
-          // 함수 호출을 감지하면 마지막 인사가 재생될 시간을 준 뒤 자동으로 hangup.
-          tools: [
-            {
-              type: "function",
-              name: "end_call",
-              description:
-                "마무리 인사를 다 말한 직후, 통화를 실제로 종료할 때 호출해. 다른 말 없이 이 함수만 호출하면 돼.",
-              parameters: { type: "object", properties: {}, additionalProperties: false },
-            },
-          ],
           audio: {
             output: { voice },
             input: {
@@ -82,6 +84,23 @@ export async function createCallSession(
               },
             },
           },
+          // 마무리 인사까지 마치면 AI가 스스로 통화를 종료하도록 하는 도구.
+          // 프롬프트(realtimeInstructions.ts)에서 "마무리 멘트 다음 차례에만
+          // 호출"하도록 지시한다. 클라이언트(useRealtimeCall.js)는 이 함수
+          // 호출 이벤트를 감지해서 hangup()을 실행한다.
+          tools: [
+            {
+              type: "function",
+              name: "end_call",
+              description:
+                "마무리 인사를 다 말한 다음 차례에, 통화를 실제로 종료할 때 호출해. 다른 말 없이 이 함수만 호출하면 돼.",
+              parameters: {
+                type: "object",
+                properties: {},
+                additionalProperties: false,
+              },
+            },
+          ],
         },
       }),
     });

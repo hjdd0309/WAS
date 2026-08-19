@@ -17,6 +17,22 @@ import { getPersona, DEFAULT_PERSONA_ID } from "../src/personas";
 import { buildRealtimeInstructions } from "../src/realtimeInstructions";
 import { createTestState, checkRedirect, checkEndCall, recordUsage, printSummary } from "./checks";
 
+// frontend/src/hooks/useRealtimeCall.js와 동일한 텍스트 — 실제 통화에서는
+// 매 사용자 턴이 끝날 때마다 이 리마인더를 시스템 메시지로 재주입해서 톤/
+// 재정향 지시를 다시 상기시킨다. 이게 없으면 텍스트 시뮬레이션이 실제
+// 통화보다 프롬프트 준수율이 낮게 나와 결과가 왜곡된다. frontend 쪽 문구가
+// 바뀌면 이것도 같이 맞춰야 한다.
+const TONE_REMINDER =
+  '[내부 지시 — 사용자에게 보이지 않음] 지금까지의 텐션과 존댓말 톤을 그대로 유지해. 문장을 딱딱하거나 완벽하게 다듬지 말고, 추임새(음, 어, 그니까)를 섞어서 편하게 대답해. 방금 전에 썼던 표현이나 문장 구조를 반복하지 말고 새롭게 말해. 반말("뭐 해?", "봤어?")로 새지 말고 반드시 존댓말("뭐 해요?", "봤어요?")로 끝낼 것 — 대화가 길어질수록 반말로 흘러가는 경향이 있으니 매번 스스로 점검해. 그렇다고 "여쭤봐도 될까요?", "~해주실 수 있나요" 처럼 지나치게 격식체로 넘어가지도 마 — 친한 사이에 편하게 쓰는 존댓말("뭐 해요?", "봤어요?")이 목표지, 공손하고 딱딱한 존댓말이 아니야. 사용자가 반말로 짧게 답해도("ㅇㅇ", "몰라") 절대 따라서 반말 쓰지 말고 네 존댓말 톤을 계속 유지해.';
+
+function buildPlanReminder(plan: string): string {
+  if (!plan) return "";
+  return `\n\n[내부 지시 — 사용자에게 보이지 않음] 사용자가 요즘 하려는 일: "${plan}". 이 통화에서 이걸 단 한 번도 언급한 적이 없다면, 이번 응답이나 다음 응답에서 반드시 가볍게 물어봐("저번에 말한 ○○ 어떻게 됐어?" 식으로) — 뭉뚱그려서 "다른 계획 있어?"처럼 묻지 말고 반드시 위 구체적인 내용으로.
+이미 한 번 물어봤는데 사용자가 "몰라"/"그냥"처럼 애매하게 얼버무리기만 했다면(명확한 거부의 말이 없어도), 그것도 이 얘기를 더 하고 싶지 않다는 신호로 받아들여 — 절대 말을 바꿔서 다시 캐묻지 마. 가볍게 받아주고 마무리로 넘어가.
+이미 한 번 언급했는데 사용자가 힘들다/어렵다/괴롭다/짜증난다 같은 부정적 감정을 명확히 말로 표현했다면(단순 얼버무림과 다름), 절대 다시 캐묻지 말고 먼저 공감·위로부터 해(다독여주는 톤) — 그 다음에야 딱 한 번, 아까와 다른 부드러운 말투로 살짝만 다시 챙겨봐("천천히 해도 되니까 조금이라도 해볼 수 있겠어요?" 식으로). 이 부드러운 재시도에도 "됐어요"/"말고"/"그만 물어봐요" 같은 명확한 거부든, 또 애매하게 얼버무리는 반응이든 오면 그 뒤로는 절대 다시 꺼내지 마.
+이미 (최초 질문 + 부드러운 재시도) 두 번 다 다뤘거나, 사용자가 거부·회피 신호를 보였다면, 그 이후로는 절대 다시 묻거나 언급하지 말고 그냥 자연스럽게 흘러가.`;
+}
+
 function parseArgs() {
   const args = new Map<string, string>();
   for (const raw of process.argv.slice(2)) {
@@ -72,13 +88,13 @@ async function main() {
           type: "realtime",
           model,
           instructions,
-          modalities: ["text"],
+          output_modalities: ["text"],
           tools: [
             {
               type: "function",
               name: "end_call",
               description:
-                "마무리 인사를 다 말한 직후, 통화를 실제로 종료할 때 호출해. 다른 말 없이 이 함수만 호출하면 돼.",
+                "마무리 인사를 다 말한 다음 차례에, 통화를 실제로 종료할 때 호출해. 다른 말 없이 이 함수만 호출하면 돼.",
               parameters: { type: "object", properties: {}, additionalProperties: false },
             },
           ],
@@ -121,6 +137,18 @@ async function main() {
           JSON.stringify({
             type: "conversation.item.create",
             item: { type: "message", role: "user", content: [{ type: "input_text", text: userInput }] },
+          }),
+        );
+        // 실제 통화(useRealtimeCall.js)와 동일하게, 매 사용자 턴 직후 톤/재정향
+        // 리마인더를 시스템 메시지로 재주입한 다음 response.create를 보낸다.
+        socket.send(
+          JSON.stringify({
+            type: "conversation.item.create",
+            item: {
+              type: "message",
+              role: "system",
+              content: [{ type: "input_text", text: TONE_REMINDER + buildPlanReminder(plan) }],
+            },
           }),
         );
         socket.send(JSON.stringify({ type: "response.create" }));
