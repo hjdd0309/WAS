@@ -64,11 +64,7 @@ export default function Home({
             <p className="text-[15px] text-[#b9b9b9]">안녕하세요,</p>
             <p className="mt-1 whitespace-nowrap text-[28px] font-bold text-white">잠깐만요!</p>
             <p className="mt-3 text-[13px] leading-[1.6] text-[#b9b9b9]">
-              <span className="whitespace-nowrap">정신없이 이어진 화면의 흐름,</span>
-              <br />
-              <span className="whitespace-nowrap">
-                저와 잠깐 <span className="text-accent">다른 얘기</span> 해볼까요?
-              </span>
+              정신없이 이어진 화면의 흐름, 저와 잠깐 <span className="text-accent">다른 얘기</span> 해볼까요?
             </p>
           </div>
           <div className="animate-float absolute right-0 top-4 flex h-[150px] w-[135px] items-center justify-center">
