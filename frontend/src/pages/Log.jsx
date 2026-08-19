@@ -84,8 +84,12 @@ export default function Log({ callLog, onNavigate, onCallPress }) {
                         key={entry.id}
                         className="flex items-center gap-3 rounded-[18px] border border-[#695b69]/60 bg-[#1d191d] p-3.5"
                       >
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/10 text-xl">
-                          {persona.emoji}
+                        <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xl">
+                          {persona.image ? (
+                            <img src={persona.image} alt="" className="size-9 object-contain" />
+                          ) : (
+                            persona.emoji
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
