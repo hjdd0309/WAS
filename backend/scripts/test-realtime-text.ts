@@ -50,7 +50,7 @@ async function main() {
   }
 
   const args = parseArgs();
-  const model = process.env.REALTIME_MODEL || "gpt-realtime-mini";
+  const model = process.env.REALTIME_MODEL || "gpt-realtime";
   const persona = getPersona(args.get("persona") ?? DEFAULT_PERSONA_ID);
   const interests = (args.get("interests") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const plan = args.get("plan") ?? "";

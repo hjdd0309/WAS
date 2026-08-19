@@ -80,6 +80,7 @@ export default function useRealtimeCall() {
   const micMutedByUserRef = useRef(false)
   const planRef = useRef('')
   const hangupRef = useRef(null)
+  const pendingEndCallRef = useRef(false)
   // 연결 직후 첫 인사(첫 response) 도중엔 마이크를 아예 죽여둔다. 원격 오디오
   // 트랙이 막 붙은 시점엔 브라우저 에코 캔슬레이션이 그 트랙을 레퍼런스로
   // 잡기 전이라, AI 목소리가 마이크로 살짝 새어 들어가 서버 VAD가 "사용자가
@@ -159,6 +160,15 @@ export default function useRealtimeCall() {
           return next
         })
         currentAiIndexRef.current = null
+        // end_call이 같은 응답 안의 오디오(마무리 인사)와 함께 왔던 경우 —
+        // 그 오디오가 방금 다 재생됐으니 이제 끊는다. pendingEndCallRef는
+        // output_item.done 시점에 "이 응답에 아직 재생 중인 오디오가 있을
+        // 때만" 세우므로, 여기서 기다리는 건 항상 같은 응답의 오디오다.
+        if (pendingEndCallRef.current) {
+          pendingEndCallRef.current = false
+          console.log('[realtime] 같은 턴 마무리 인사 재생 완료 — 통화 종료 실행')
+          setTimeout(() => hangupRef.current?.(), 300)
+        }
         break
       }
       case 'input_audio_buffer.speech_started': {
@@ -193,16 +203,24 @@ export default function useRealtimeCall() {
         break
       }
       case 'response.output_item.done': {
-        // AI가 end_call 도구를 호출했는지 확인. end_call은 프롬프트 지시상
-        // "다른 말 없이 이 함수만" 호출하는 별도 차례라 이 응답 자체엔 오디오가
-        // 없다 — 그래서 "다음 오디오 재생이 끝나면 끊기"처럼 미래의 무관한
-        // 턴을 기다리면 엉뚱한 타이밍에 끊기는 버그가 생겼었다(실측으로 확인).
-        // 대신 감지 즉시 끊되, 마무리 인사(이전 턴) 오디오가 이미 다 재생된
-        // 뒤라는 걸 보장하기 위해 아주 짧은 지연만 둔다.
+        // AI가 end_call 도구를 호출했는지 확인. 프롬프트 지시상 end_call은
+        // 마무리 인사와 "다른 턴"에 단독으로 호출하는 게 원칙이지만, 모델이
+        // (특히 풀 모델일수록) 지시를 어기고 마무리 인사 오디오와 end_call을
+        // 같은 응답 안에 함께 담아버리는 경우가 실측으로 확인됐다. 그 경우
+        // 무조건 즉시 끊으면 아직 재생 중인 마무리 인사가 중간에 잘린다.
+        // 그래서 "이 응답에 지금 재생 중인 오디오가 있는지"(currentAiIndexRef)로
+        // 분기한다 — 있으면 그 오디오의 done 이벤트를 기다렸다가 끊고
+        // (response.output_audio_transcript.done 참고), 없으면(정상적으로
+        // 별도 턴으로 온 경우) 바로 끊는다.
         const item = event.item
         if (item?.type === 'function_call' && item?.name === 'end_call') {
-          console.log('[realtime] end_call 도구 호출 감지 — 통화 종료')
-          setTimeout(() => hangupRef.current?.(), 300)
+          if (currentAiIndexRef.current !== null) {
+            console.log('[realtime] end_call 도구 호출 감지 — 같은 턴 오디오 재생 중, 끝나면 종료')
+            pendingEndCallRef.current = true
+          } else {
+            console.log('[realtime] end_call 도구 호출 감지 — 통화 종료')
+            setTimeout(() => hangupRef.current?.(), 300)
+          }
         }
         break
       }
