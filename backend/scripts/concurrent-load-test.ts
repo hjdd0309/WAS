@@ -68,7 +68,8 @@ function runOneCall(
       headers: { Authorization: `Bearer ${apiKey}` },
     });
 
-    const timeout = setTimeout(() => finish("error", "timeout", "60s 타임아웃"), 60_000);
+    const perCallTimeoutMs = TURN_DELAY_MS * (TURNS_PER_CALL + 1) + 30_000;
+    const timeout = setTimeout(() => finish("error", "timeout", `${perCallTimeoutMs}ms 타임아웃`), perCallTimeoutMs);
 
     socket.on("open", () => {
       socket.send(

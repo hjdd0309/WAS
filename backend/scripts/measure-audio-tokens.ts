@@ -65,7 +65,7 @@ async function main() {
     persona,
   );
 
-  const turns = ["어 그냥 유튜브 보고 있었어"];
+  const turns = ["어 그냥 유튜브 보고 있었어", "몰라 그냥 봄"];
   const audioClips: Buffer[] = [];
   for (const text of turns) {
     console.log(`합성 중: "${text}"`);

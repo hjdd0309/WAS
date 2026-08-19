@@ -16,17 +16,29 @@ export interface CreateCallSessionError {
 
 // gpt-realtime과 gpt-realtime-mini는 TPM(분당 토큰) 레이트리밋이 완전히
 // 분리된 별개 버킷이라는 걸 실측으로 확인함(Tier 1 기준 각각 40,000 TPM —
-// 합쳐서 80,000). 통화마다 랜덤으로 두 모델에 나눠 배정해서 사실상 그
-// 80,000을 다 쓴다 — mini는 음성 인식 정확도가 살짝 떨어진다는 피드백이
-// 있지만, 부스처럼 짧은 시간에 여러 통화가 몰릴 때 gpt-realtime 하나만
-// 쓰다 429(rate_limit_exceeded)로 아예 못 받는 것보다 낫다는 트레이드오프.
+// 합쳐서 80,000). 통화마다 두 모델에 번갈아(라운드로빈) 배정해서 그 80,000을
+// 나눠 쓴다 — mini는 음성 인식 정확도가 살짝 떨어진다는 피드백이 있지만,
+// 부스처럼 짧은 시간에 여러 통화가 몰릴 때 gpt-realtime 하나만 쓰다
+// 429(rate_limit_exceeded)로 아예 못 받는 것보다 낫다는 트레이드오프.
+//
+// 완전 랜덤 대신 라운드로빈을 쓰는 이유: 동시 부하 실측(concurrent-load-test,
+// throughput-test)에서 랜덤은 운 나쁘면 동시 요청 다수가 같은 모델에 쏠려
+// 그 버킷만 넘치는 경우가 실제로 재현됐다(예: 4개 중 3개가 gpt-realtime에
+// 몰려 그것만 429). 라운드로빈으로 바꾸니 같은 동시 4개가 안정적으로 전부
+// 성공했다. 다만 이 카운터는 서버리스 인스턴스별 in-memory라 완벽한 전역
+// 라운드로빈은 아니다 — 그래도 랜덤보다 쏠림이 확연히 덜하다는 게 실측 결론.
+// 이 이상(순간 동시 5개+)으로 몰리면 429가 나는데, 그건 프론트의 기존
+// "접속 인원 초과" 에러 화면(CallConnecting)이 처리하므로 별도 대응 불필요.
 const REALTIME_MODELS = ["gpt-realtime", "gpt-realtime-mini"];
+let roundRobinIndex = 0;
 
 // REALTIME_MODEL 환경변수를 설정하면 분산을 끄고 그 모델로 고정한다 —
 // 특정 모델만 문제가 있을 때 재배포 없이 바로 우회할 수 있는 운영 비상용 스위치.
 function pickRealtimeModel(): string {
   if (process.env.REALTIME_MODEL) return process.env.REALTIME_MODEL;
-  return REALTIME_MODELS[Math.floor(Math.random() * REALTIME_MODELS.length)];
+  const model = REALTIME_MODELS[roundRobinIndex % REALTIME_MODELS.length];
+  roundRobinIndex += 1;
+  return model;
 }
 
 export async function createCallSession(
