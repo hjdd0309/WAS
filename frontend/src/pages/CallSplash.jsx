@@ -94,7 +94,6 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
     <CallConnecting
       status={call.status}
       errorMessage={call.errorMessage}
-      errorKind={call.errorKind}
       persona={persona}
       onRetry={handleRetry}
       onCancel={onHome}
