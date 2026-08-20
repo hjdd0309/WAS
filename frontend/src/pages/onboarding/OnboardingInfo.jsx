@@ -1,10 +1,19 @@
-import onboardingComposite from '../../assets/illustrations/onboarding-composite.png'
 import ProgressDots from '../../components/ProgressDots'
 import OnboardingActions from '../../components/OnboardingActions'
 
 export default function OnboardingInfo({
-  crop,
-  slotSize = { width: 222, height: 250 },
+  characterSrc,
+  characterWidth,
+  characterRight,
+  characterBottom,
+  widgetSrc,
+  widgetWidth,
+  widgetTop,
+  widgetLeft,
+  cardWidth,
+  cardHeight,
+  slotHeight = cardHeight,
+  widgetBehindCharacter = false,
   heading,
   headingAccent,
   headingSizeClass = 'text-[26px]',
@@ -22,27 +31,26 @@ export default function OnboardingInfo({
         {/* justify-center 대신 앞뒤 spacer로 중앙 정렬한다: 공간이 남으면 위아래로 똑같이
             늘어나 중앙에 오고, 모자라면 spacer가 먼저 0으로 줄어서(콘텐츠는 그대로 유지)
             아래쪽으로만 자연스럽게 스크롤되게 한다. */}
-        <div className="min-h-0 flex-1 shrink" aria-hidden="true" />
+        <div className="min-h-0 flex-[2] shrink" aria-hidden="true" />
 
-        <div className="flex shrink-0 items-center justify-center" style={{ width: slotSize.width, height: slotSize.height }}>
-          <div
-            className="relative overflow-hidden rounded-[29px]"
-            style={{ width: crop.containerW, height: crop.containerH }}
-          >
+        <div className="flex shrink-0 items-end justify-center" style={{ height: slotHeight }}>
+          <div className="relative" style={{ width: cardWidth, height: cardHeight }}>
             <img
-              src={onboardingComposite}
+              src={widgetSrc}
               alt=""
-              className="absolute max-w-none"
-              style={
-                crop.w != null
-                  ? { width: crop.w, height: crop.h, left: crop.left, top: crop.top }
-                  : { left: crop.left, top: crop.top }
-              }
+              className={`absolute ${widgetBehindCharacter ? 'z-0' : 'z-10'}`}
+              style={{ width: widgetWidth, top: widgetTop, left: widgetLeft }}
+            />
+            <img
+              src={characterSrc}
+              alt=""
+              className={`absolute ${widgetBehindCharacter ? 'z-10' : 'z-0'}`}
+              style={{ width: characterWidth, right: characterRight, bottom: characterBottom }}
             />
           </div>
         </div>
 
-        <div className="mt-5 shrink-0">
+        <div className="mt-5 w-full shrink-0">
           <h1 className={`${headingSizeClass} font-semibold leading-[1.4] text-white`}>
             {heading}
             <br />

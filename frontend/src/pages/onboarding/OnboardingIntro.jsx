@@ -1,4 +1,4 @@
-import onboardingImage12 from '../../assets/illustrations/onboarding1-image12.png'
+import headphoneIcon from '../../assets/illustrations/onboarding1-headphone-icon.png'
 import ProgressDots from '../../components/ProgressDots'
 import OnboardingActions from '../../components/OnboardingActions'
 
@@ -10,7 +10,7 @@ export default function OnboardingIntro({ onNext }) {
           잠<span className="inline-block rotate-3 text-[38px]">깐</span>만요!
         </h1>
 
-        <img src={onboardingImage12} alt="위스피 마스코트" className="w-full max-w-[226px]" />
+        <img src={headphoneIcon} alt="위스피 마스코트" className="w-full max-w-[226px]" />
 
         <p className="text-[17px] leading-[1.6] text-[#919191]">
           화면에 빠진 당신을
