@@ -53,7 +53,7 @@ export default function DemoExperience({ persona, onExit, onTriggerCall }) {
         type="button"
         onClick={onExit}
         aria-label="체험 종료"
-        className="absolute right-4 top-4 z-[70] flex h-9 items-center gap-1.5 rounded-full border border-white/15 bg-black/70 px-3.5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(0,0,0,0.5)] backdrop-blur active:opacity-70"
+        className="absolute right-4 top-20 z-[70] flex h-9 items-center gap-1.5 rounded-full border border-white/15 bg-black/70 px-3.5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(0,0,0,0.5)] backdrop-blur active:opacity-70"
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
           <path d="M6 6l12 12M18 6 6 18" />
