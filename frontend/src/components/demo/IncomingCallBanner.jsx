@@ -8,30 +8,19 @@ function PhoneIcon({ rotate, color = '#fff' }) {
   )
 }
 
-// 배너가 위로 슬라이드되어 사라지는 퇴장 애니메이션 시간 — 진입(duration-300)과
-// 대칭을 맞춘다. 이 시간이 지난 뒤에야 실제로 부모에게 닫힘을 알려 DOM에서
-// 제거한다 — 그냥 바로 사라지면(거절 버튼 클릭 즉시 언마운트) 사용자가 액션이
-// 실제로 반영됐는지 인지할 틈이 없어 배너가 "그냥 사라진 것"처럼 혼란스럽다.
-const EXIT_DURATION_MS = 300
-
 // 다른 앱을 쓰는 도중 실제 아이폰/안드로이드가 보여주는 것처럼, 화면 위에서
 // 아래로 슬라이드되어 내려오는 가로형 수신 전화 배너. 탭하거나 수락을 누르면
 // 실제 통화 화면(onAccept → CallSplash)으로, 거절을 누르면 진입할 때와 대칭으로
-// 다시 위로 슬라이드되어 사라진 뒤 지금 보던 화면으로 되돌아간다.
-export default function IncomingCallBanner({ persona, onAccept, onDecline }) {
+// 다시 위로 슬라이드되어 사라진다. 퇴장 타이밍(몇 ms 뒤에 실제로 언마운트할지)은
+// 부모(DemoExperience)가 `leaving` prop으로 제어한다 — 체험 종료 버튼이 배너와
+// 같은 순간에 함께 움직이려면 두 컴포넌트가 같은 상태를 봐야 하기 때문.
+export default function IncomingCallBanner({ persona, onAccept, onDeclineClick, leaving }) {
   const [entered, setEntered] = useState(false)
-  const [leaving, setLeaving] = useState(false)
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setEntered(true))
     return () => cancelAnimationFrame(raf)
   }, [])
-
-  const handleDecline = () => {
-    if (leaving) return
-    setLeaving(true)
-    setTimeout(onDecline, EXIT_DURATION_MS)
-  }
 
   return (
     <div
@@ -62,13 +51,13 @@ export default function IncomingCallBanner({ persona, onAccept, onDecline }) {
           aria-label="거절"
           onClick={(e) => {
             e.stopPropagation()
-            handleDecline()
+            onDeclineClick()
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault()
               e.stopPropagation()
-              handleDecline()
+              onDeclineClick()
             }
           }}
           className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#ff4b4b] active:opacity-70"
