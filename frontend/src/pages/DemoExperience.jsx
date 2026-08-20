@@ -46,13 +46,14 @@ export default function DemoExperience({ persona, onExit, onTriggerCall }) {
     }
   }, [])
 
+  // 거절한 뒤 모의 피드에 그대로 두면, 이미 한 번 보여준 문구 알림 배너가
+  // (showNotification은 계속 true라) 수신 전화 배너가 사라지는 순간 다시
+  // 나타나 버린다 — 더 보여줄 것도 없이 똑같은 배너가 반복되는 셈이라
+  // 혼란스럽다. 그래서 거절 애니메이션이 끝나면 체험 전체를 끝내고 홈으로.
   const handleDeclineCall = () => {
     if (callBannerLeaving) return
     setCallBannerLeaving(true)
-    setTimeout(() => {
-      setCallBannerMounted(false)
-      setCallBannerLeaving(false)
-    }, CALL_BANNER_EXIT_MS)
+    setTimeout(onExit, CALL_BANNER_EXIT_MS)
   }
 
   // 배너(문구 알림이든 수신 전화든)가 화면에 실제로 걸쳐 있는 동안만 체험
