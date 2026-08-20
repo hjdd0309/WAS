@@ -1,7 +1,7 @@
 export const openApiSpec = {
   openapi: "3.0.3",
   info: {
-    title: "Wait A Second — Realtime Call API",
+    title: "위스피 (Wispy) — Realtime Call API",
     version: "0.1.0",
     description:
       "프론트가 신호를 보내면 OpenAI Realtime API용 임시 토큰을 발급합니다. " +

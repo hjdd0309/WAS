@@ -30,7 +30,7 @@ export default function NotificationPermissionCard({ title = '알림 허용' }) 
         <p className="mt-2 text-[13px] leading-[1.6] text-[#919191]">알림이 허용됐어요.</p>
       ) : notifPermission === 'denied' ? (
         <p className="mt-2 text-[13px] leading-[1.6] text-[#919191]">
-          알림이 차단돼 있어요. 브라우저/시스템 설정에서 잠깐만 알림을 직접 허용해주세요.
+          알림이 차단돼 있어요. 브라우저/시스템 설정에서 위스피 알림을 직접 허용해주세요.
         </p>
       ) : notifPermission === 'unsupported' ? (
         <p className="mt-2 text-[13px] leading-[1.6] text-[#919191]">이 브라우저는 알림을 지원하지 않아요.</p>

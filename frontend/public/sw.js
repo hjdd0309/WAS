@@ -1,4 +1,4 @@
-// 잠깐만 서비스워커.
+// 위스피 서비스워커.
 //
 // 서버(backend/src/routes/push.ts)가 web-push로 보내는 진짜 Web Push를
 // 여기서 받아 OS 알림으로 띄운다. 페이지 JS(useAwayMonitor)는 임계값 도달을

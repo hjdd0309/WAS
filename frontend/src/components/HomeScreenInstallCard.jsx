@@ -44,8 +44,8 @@ export default function HomeScreenInstallCard({ title = '홈 화면에 추가' }
         <>
           <p className="mt-2 text-[13px] leading-[1.6] text-[#919191]">
             {canInstall
-              ? '버튼을 눌러 잠깐만을 앱처럼 설치할 수 있어요.'
-              : '이미 설치했다면 홈 화면의 잠깐만 아이콘으로 열어주세요. 아직이라면 잠시 후 이 버튼이 눌려요(브라우저가 준비 중).'}
+              ? '버튼을 눌러 위스피를 앱처럼 설치할 수 있어요.'
+              : '이미 설치했다면 홈 화면의 위스피 아이콘으로 열어주세요. 아직이라면 잠시 후 이 버튼이 눌려요(브라우저가 준비 중).'}
           </p>
           <button
             onClick={handleInstallClick}

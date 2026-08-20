@@ -51,7 +51,7 @@ export default function Settings({ monitoredApps, interests, plan, onManageApps,
   return (
     <div className="flex h-full w-full flex-col bg-[#1b171c]">
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-6">
-        <ScreenHeader title="설정" subtitle="잠깐만을 나에게 맞게 조정해요" />
+        <ScreenHeader title="설정" subtitle="위스피를 나에게 맞게 조정해요" />
 
         <button
           onClick={onManageApps}
@@ -99,7 +99,7 @@ export default function Settings({ monitoredApps, interests, plan, onManageApps,
           <Row label="문의하기" right={<Chevron />} />
         </div>
 
-        <p className="mt-6 text-center text-[12px] text-[#4b4750]">잠깐만 1.0.0</p>
+        <p className="mt-6 text-center text-[12px] text-[#4b4750]">위스피 1.0.0</p>
       </div>
 
       <BottomNav active="settings" onNavigate={onNavigate} onCallPress={onCallPress} />
