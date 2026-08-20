@@ -13,6 +13,7 @@ import CallActive from './pages/call/CallActive'
 import { getApp } from './apps'
 import { getPersona, DEFAULT_PERSONA_ID } from './personas'
 import { loadState, saveState } from './lib/storage'
+import { generateId } from './lib/id'
 import { saveProfile } from './lib/api'
 import { prefetchCallSession } from './lib/callSession'
 import { showCallNotification } from './lib/notify'
@@ -97,7 +98,7 @@ export default function App() {
     setProfile((prev) => ({
       ...prev,
       goals: data.goals,
-      apps: [{ id: crypto.randomUUID(), appId: data.appId, limitMinutes: data.limitMinutes, personaId: data.personaId }],
+      apps: [{ id: generateId(), appId: data.appId, limitMinutes: data.limitMinutes, personaId: data.personaId }],
       interests: data.interests,
       plan: data.plan,
       onboarded: true,
@@ -113,7 +114,7 @@ export default function App() {
   const addApp = (appId) =>
     setProfile((prev) => ({
       ...prev,
-      apps: [...prev.apps, { id: crypto.randomUUID(), appId, limitMinutes: 45, personaId: DEFAULT_PERSONA_ID }],
+      apps: [...prev.apps, { id: generateId(), appId, limitMinutes: 45, personaId: DEFAULT_PERSONA_ID }],
     }))
 
   const updateApp = (id, partial) =>

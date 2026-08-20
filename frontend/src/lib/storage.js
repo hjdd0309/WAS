@@ -2,6 +2,7 @@
 // 온보딩을 다시 거치지 않도록 한다. 백엔드는 stateless라 이 상태는 전적으로
 // 프론트(브라우저)가 들고 있어야 한다.
 import { PERSONAS, DEFAULT_PERSONA_ID } from '../personas'
+import { generateId } from './id'
 
 const STORAGE_KEY = 'was:v1'
 const VALID_PERSONA_IDS = PERSONAS.map((p) => p.id)
@@ -25,7 +26,7 @@ export function getUserId() {
   if (typeof window === 'undefined') return ''
   let id = window.localStorage.getItem(USER_ID_KEY)
   if (!id) {
-    id = crypto.randomUUID()
+    id = generateId()
     window.localStorage.setItem(USER_ID_KEY, id)
   }
   return id

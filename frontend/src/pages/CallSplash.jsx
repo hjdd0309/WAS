@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import useRealtimeCall from '../hooks/useRealtimeCall'
 import { postJson } from '../lib/api'
+import { generateId } from '../lib/id'
 import CallConnecting from './call/CallConnecting'
 import CallActive from './call/CallActive'
 import CallSummaryScreen from './call/CallSummaryScreen'
@@ -63,7 +64,7 @@ export default function CallSplash({ app, persona, profile, onHome, onSaveSummar
     onSaveSummary?.(summary)
     postJson('/api/call/summary', { summary })
     onLogCall?.({
-      id: crypto.randomUUID(),
+      id: generateId(),
       timestamp: Date.now(),
       personaId: persona.id,
       appId: app.id,
